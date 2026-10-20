@@ -1,51 +1,113 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/core";
-import "./App.css";
+import {
+  AddCycleDialog,
+  Background,
+  CategoriesCard,
+  CycleLengthCard,
+  EmptyState,
+  EnergyCard,
+  FilterBar,
+  Heatmap,
+  MorningBlock,
+  OpenFileDialog,
+  RecentCycles,
+  ReportHeader,
+  SummaryCards,
+  Toast,
+  TopBar,
+  TopWords,
+} from "./components";
+import { PreviewState } from "./lib/view";
+import * as demoData from "./data/demo";
 
-function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+/**
+ * Только для просмотра вёрстки: что показать открытым.
+ * panel: 'category' | 'period' | 'top' | 'file' | 'errors' | 'open-file' | 'add-cycle' | null
+ */
+const preview: PreviewState = {
+  panel: null,
+  empty: false,
+  toast: false,
+  rowMenu: null,
+  heatTooltip: null,
+};
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
-  }
+export default function App() {
+  const { file } = demoData;
 
   return (
-    <main className="container">
-      <h1>Welcome to Tauri + React</h1>
+    <div className="relative min-h-screen overflow-hidden">
+      <Background />
 
-      <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
-
-      <form
-        className="row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          greet();
-        }}
-      >
-        <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
+      <div className="relative z-1 mx-auto flex max-w-340 flex-col gap-6 px-10 pt-8 pb-14">
+        <TopBar
+          file={file}
+          errors={demoData.inputErrors}
+          openPanel={preview.panel}
         />
-        <button type="submit">Greet</button>
-      </form>
-      <p>{greetMsg}</p>
-    </main>
+
+        <FilterBar
+          filters={demoData.filters}
+          counts={demoData.categoryCounts}
+          shown={preview.empty ? 0 : demoData.summary.cycles}
+          total={file.cycles}
+          presets={demoData.periodPresets}
+          openPanel={preview.panel}
+        />
+
+        <main className="flex flex-col gap-6">
+          <ReportHeader
+            fileName={file.name}
+            period={
+              preview.empty ? "период данных: —" : `${file.from} → ${file.to}`
+            }
+            filtersText={`фильтры не применены · топ-${demoData.filters.top} слов`}
+          />
+
+          <SummaryCards summary={preview.empty ? null : demoData.summary} />
+
+          {preview.empty ? (
+            <EmptyState />
+          ) : (
+            <>
+              <div className="grid grid-cols-3 gap-5">
+                <CategoriesCard stats={demoData.categories} />
+                <CycleLengthCard stat={demoData.cycleLength} />
+                <EnergyCard stat={demoData.energy} />
+              </div>
+
+              <Heatmap
+                matrix={demoData.heatmap}
+                bestDay={demoData.bestDay}
+                bestHour={demoData.bestHour}
+                tooltip={preview.heatTooltip}
+              />
+
+              <div className="grid grid-cols-2 gap-5">
+                <MorningBlock minutesByDay={demoData.morning} />
+                <TopWords
+                  words={demoData.topWords}
+                  top={demoData.filters.top}
+                />
+              </div>
+
+              <RecentCycles
+                cycles={demoData.recentCycles}
+                total={demoData.summary.cycles}
+                menuOpenIndex={preview.rowMenu}
+              />
+            </>
+          )}
+        </main>
+      </div>
+
+      {preview.panel === "open-file" && <OpenFileDialog />}
+      {preview.panel === "add-cycle" && (
+        <AddCycleDialog
+          draft={demoData.cycleDraft}
+          suggestions={demoData.topicSuggestions}
+        />
+      )}
+      {preview.toast && <Toast message="Цикл добавлен · rust, 50 мин" undo />}
+    </div>
   );
 }
-
-export default App;
