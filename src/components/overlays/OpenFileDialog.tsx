@@ -2,11 +2,16 @@ import { Button, IconFile, IconUpload, Modal, ModalHeader } from '../ui';
 
 const FORMAT_EXAMPLE = 'дата,день,час,категория,тема,минуты,энергия\n2026-10-20,2,6,rust,ToDo на Tauri: команды,90,5';
 
-export function OpenFileDialog({ pickedName }: { pickedName?: string }) {
+interface OpenFileDialogProps {
+  pickedName?: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function OpenFileDialog({ pickedName, open, onOpenChange }: OpenFileDialogProps) {
   return (
-    <Modal labelledBy="od-title" className="w-145 gap-5">
+    <Modal open={open} onOpenChange={onOpenChange} className="w-145 gap-5">
       <ModalHeader
-        id="od-title"
         title="Открыть журнал"
         subtitle="CSV-файл в UTF-8, одна строка — один цикл. Файл читается локально."
       />

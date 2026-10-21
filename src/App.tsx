@@ -18,6 +18,7 @@ import {
 } from "./components";
 import { PreviewState } from "./lib/view";
 import * as demoData from "./data/demo";
+import { useState } from "react";
 
 /**
  * Только для просмотра вёрстки: что показать открытым.
@@ -33,13 +34,14 @@ const preview: PreviewState = {
 
 export default function App() {
   const { file } = demoData;
+  const [openAddCycle, setOpenAddCycle] = useState(false);
 
   return (
     <div className="relative min-h-screen overflow-hidden">
       <Background />
 
       <div className="relative z-1 mx-auto flex max-w-340 flex-col gap-6 px-10 pt-8 pb-14">
-        <TopBar />
+        <TopBar setOpenAddCycle={setOpenAddCycle} />
 
         <FilterBar
           filters={demoData.filters}
@@ -96,13 +98,13 @@ export default function App() {
         </main>
       </div>
 
-      {preview.panel === "open-file" && <OpenFileDialog />}
-      {preview.panel === "add-cycle" && (
-        <AddCycleDialog
-          draft={demoData.cycleDraft}
-          suggestions={demoData.topicSuggestions}
-        />
-      )}
+      <OpenFileDialog open={preview.panel === "open-file"} onOpenChange={() => {}} />
+      <AddCycleDialog
+        draft={demoData.cycleDraft}
+        suggestions={demoData.topicSuggestions}
+        open={openAddCycle}
+        onOpenChange={setOpenAddCycle}
+      />
       {preview.toast && <Toast message="Цикл добавлен · rust, 50 мин" undo />}
     </div>
   );

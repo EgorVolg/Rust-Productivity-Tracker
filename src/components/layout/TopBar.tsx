@@ -1,9 +1,10 @@
-import { useState } from "react";
 import { Button, IconPlus, Logo } from "../ui";
 
-export function TopBar() {
-  const [showAddCycle, setShowAddCycle] = useState(false);
-
+export function TopBar({
+  setOpenAddCycle,
+}: {
+  setOpenAddCycle: (open: boolean) => void;
+}) {
   return (
     <header className="glass relative z-60 flex items-center justify-between gap-4 rounded-[20px] py-3 pr-3.5 pl-5">
       <div className="flex items-center gap-3">
@@ -55,7 +56,7 @@ export function TopBar() {
           variant="primary"
           aria-haspopup="dialog"
           className="pl-3.5"
-          onClick={() => setShowAddCycle(true)}
+          onClick={() => setOpenAddCycle(true)}
         >
           <IconPlus className="size-4.5" />
           Добавить цикл
