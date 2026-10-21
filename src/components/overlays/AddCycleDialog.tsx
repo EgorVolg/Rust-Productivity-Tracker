@@ -38,14 +38,35 @@ export function AddCycleDialog({
   onOpenChange,
 }: AddCycleDialogProps) {
   const isEdit = draft.mode === "edit";
-  const errors = draft.errors ?? {};
+  /** ошибки от Rust: поле → сообщение */
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  /** ошибка не по полю (например, Tauri не разобрал запрос) */
+  const [formError, setFormError] = useState<string | null>(null);
+
+  /** закрытие любым способом (Отмена, крестик, Esc, подложка, успешная отправка) сбрасывает форму и ошибки */
   const handleCancel = () => {
     setFormState(draft);
+    setErrors({});
+    setFormError(null);
     onOpenChange(false);
   };
 
+  /** меняет поле и убирает его ошибку */
+  function setField<K extends keyof CycleDraft>(key: K, value: CycleDraft[K]) {
+    setFormState((s) => ({ ...s, [key]: value }));
+    setErrors((prev) => {
+      if (!(key in prev)) return prev;
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+    setFormError(null);
+  }
+
   async function handleSubmit() {
     const { date, hour, category, topic, minutes, energy } = formState;
+    setErrors({});
+    setFormError(null);
     try {
       await api.addCycle({
         date,
@@ -55,9 +76,14 @@ export function AddCycleDialog({
         minutes: Number(minutes),
         energy,
       });
-      onOpenChange(false);
+      handleCancel();
     } catch (e) {
-      console.error("add_cycle failed:", e);
+      // Err(HashMap) из Rust приходит объектом, прочие ошибки Tauri — строкой
+      if (e && typeof e === "object") {
+        setErrors(e as Record<string, string>);
+      } else {
+        setFormError(String(e));
+      }
     }
   }
 
@@ -93,7 +119,11 @@ export function AddCycleDialog({
   }
 
   return (
-    <Modal open={open} onOpenChange={onOpenChange} className="w-205 gap-5.5">
+    <Modal
+      open={open}
+      onOpenChange={(next) => (next ? onOpenChange(true) : handleCancel())}
+      className="w-205 gap-5.5"
+    >
       <ModalHeader
         title={isEdit ? "Изменить цикл" : "Новый цикл"}
         subtitle={
@@ -119,9 +149,7 @@ export function AddCycleDialog({
                 inputMode="numeric"
                 autoComplete="off"
                 value={formState.date}
-                onChange={(e) =>
-                  setFormState({ ...formState, date: e.target.value })
-                }
+                onChange={(e) => setField("date", e.target.value)}
                 invalid={Boolean(errors.date)}
                 aria-describedby={errors.date ? "ad-date-err" : undefined}
                 className="flex-1"
@@ -129,16 +157,14 @@ export function AddCycleDialog({
               <Button
                 size="sm"
                 className="h-11 font-medium"
-                onClick={() => setFormState({ ...formState, date: today() })}
+                onClick={() => setField("date", today())}
               >
                 Сегодня
               </Button>
               <Button
                 size="sm"
                 className="h-11 font-medium"
-                onClick={() =>
-                  setFormState({ ...formState, date: yesterday() })
-                }
+                onClick={() => setField("date", yesterday())}
               >
                 Вчера
               </Button>
@@ -158,6 +184,7 @@ export function AddCycleDialog({
             <div
               role="group"
               aria-labelledby="ad-hour-l"
+              aria-describedby={errors.hour ? "ad-hour-err" : undefined}
               className="grid grid-cols-6 gap-1.5"
             >
               {HOURS.map((h) => {
@@ -176,13 +203,16 @@ export function AddCycleDialog({
                           ? "border-white/10 bg-accent/12 text-lilac"
                           : "border-white/10 bg-white/4 text-lilac",
                     )}
-                    onClick={() => setFormState((s) => ({ ...s, hour: h }))}
+                    onClick={() => setField("hour", h)}
                   >
                     {pad2(h)}
                   </button>
                 );
               })}
             </div>
+            {errors.hour && (
+              <FieldError id="ad-hour-err">{errors.hour}</FieldError>
+            )}
             <FieldHint>
               Подсвечены часы {blockLabel} блока, {pad2(blockHourStart)}–
               {pad2(blockHourEnd)}
@@ -197,10 +227,11 @@ export function AddCycleDialog({
             <CategorySelect
               id="ad-cat"
               value={formState.category}
-              onValueChange={(category) =>
-                setFormState((s) => ({ ...s, category }))
-              }
+              onValueChange={(category) => setField("category", category)}
             />
+            {errors.category && (
+              <FieldError id="ad-cat-err">{errors.category}</FieldError>
+            )}
           </div>
 
           <div className="flex flex-col gap-2">
@@ -208,7 +239,7 @@ export function AddCycleDialog({
             <TopicInput
               id="ad-topic"
               value={formState.topic}
-              onValueChange={(topic) => setFormState((s) => ({ ...s, topic }))}
+              onValueChange={(topic) => setField("topic", topic)}
               suggestions={suggestions}
               invalid={Boolean(errors.topic)}
               aria-describedby={errors.topic ? "ad-topic-err" : undefined}
@@ -224,7 +255,7 @@ export function AddCycleDialog({
                     key={t}
                     type="button"
                     title={t}
-                    onClick={() => setFormState((s) => ({ ...s, topic: t }))}
+                    onClick={() => setField("topic", t)}
                     className="h-7.5 rounded-[9px] border border-white/12 bg-white/5 px-2.5 text-xs font-medium text-lilac"
                   >
                     {truncate(t)}
@@ -242,9 +273,7 @@ export function AddCycleDialog({
                 inputMode="numeric"
                 autoComplete="off"
                 value={formState.minutes}
-                onChange={(e) =>
-                  setFormState((s) => ({ ...s, minutes: e.target.value }))
-                }
+                onChange={(e) => setField("minutes", e.target.value)}
                 invalid={Boolean(errors.minutes)}
                 aria-describedby={errors.minutes ? "ad-min-err" : undefined}
                 className="w-21"
@@ -254,9 +283,7 @@ export function AddCycleDialog({
                   key={v}
                   pressed={String(v) === formState.minutes}
                   className="h-11 rounded-xl px-2.5 font-mono text-[13px]"
-                  onClick={() =>
-                    setFormState((s) => ({ ...s, minutes: String(v) }))
-                  }
+                  onClick={() => setField("minutes", String(v))}
                 >
                   {v} мин
                 </ToggleChip>
@@ -275,6 +302,7 @@ export function AddCycleDialog({
             <div
               role="group"
               aria-labelledby="ad-en-l"
+              aria-describedby={errors.energy ? "ad-en-err" : undefined}
               className="grid grid-cols-5 gap-2"
             >
               {ENERGY.map((v) => (
@@ -282,12 +310,15 @@ export function AddCycleDialog({
                   key={v}
                   pressed={v === formState.energy}
                   className="h-11 rounded-xl font-display text-[15px]"
-                  onClick={() => setFormState((s) => ({ ...s, energy: v }))}
+                  onClick={() => setField("energy", v)}
                 >
                   {v}
                 </ToggleChip>
               ))}
             </div>
+            {errors.energy && (
+              <FieldError id="ad-en-err">{errors.energy}</FieldError>
+            )}
           </div>
         </div>
       </div>
@@ -300,9 +331,15 @@ export function AddCycleDialog({
       </div>
 
       <div className="flex items-center justify-between gap-4">
-        <span className="text-[13px] font-medium text-warn">
-          {formState.note}
-        </span>
+        {formError ? (
+          <span role="alert" className="text-[13px] font-medium text-danger">
+            {formError}
+          </span>
+        ) : (
+          <span className="text-[13px] font-medium text-warn">
+            {formState.note}
+          </span>
+        )}
         <div className="flex gap-2.5">
           <Button onClick={handleCancel} >Отмена</Button>
           <Button variant="primary" onClick={handleSubmit}>
