@@ -45,8 +45,20 @@ export function AddCycleDialog({
   };
 
   async function handleSubmit() {
-    await api.addCycle(formState);
-    onOpenChange(false);
+    const { date, hour, category, topic, minutes, energy } = formState;
+    try {
+      await api.addCycle({
+        date,
+        hour,
+        category,
+        topic,
+        minutes: Number(minutes),
+        energy,
+      });
+      onOpenChange(false);
+    } catch (e) {
+      console.error("add_cycle failed:", e);
+    }
   }
 
   const [formState, setFormState] = useState<CycleDraft>(draft);
