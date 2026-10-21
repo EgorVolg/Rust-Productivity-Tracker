@@ -1,7 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { Category } from "./types";
+import type { Category, ParseResult } from "./types";
 
-/** Данные цикла для Rust-команды add_cycle; поля как у CycleInput в lib.rs. */
 export interface CycleInput {
   date: string;
   hour: number;
@@ -11,8 +10,14 @@ export interface CycleInput {
   energy: number;
 }
 
+export interface Journal {
+  cycles: CycleInput[];
+  lineCount: number;
+}
+
 export const api = {
-  // Tauri ждёт имена аргументов в camelCase: cycle_form → cycleForm
   addCycle: (cycleForm: CycleInput) =>
     invoke<string>("add_cycle", { cycleForm }),
+
+  loadJournal: () => invoke<ParseResult>("load_journal"),
 };

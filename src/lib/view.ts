@@ -67,6 +67,5 @@ export interface PreviewState {
   panel: PanelId;
   empty: boolean;
   toast: boolean;
-  rowMenu: number | null;
   heatTooltip: { day: number; hour: number } | null;
 }

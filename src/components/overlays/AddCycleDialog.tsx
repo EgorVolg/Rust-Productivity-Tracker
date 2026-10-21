@@ -29,6 +29,8 @@ interface AddCycleDialogProps {
   suggestions: string[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** вызывается после успешной записи, чтобы перечитать журнал */
+  onAdded?: () => void;
 }
 
 export function AddCycleDialog({
@@ -36,6 +38,7 @@ export function AddCycleDialog({
   suggestions,
   open,
   onOpenChange,
+  onAdded,
 }: AddCycleDialogProps) {
   const isEdit = draft.mode === "edit";
   /** ошибки от Rust: поле → сообщение */
@@ -67,8 +70,16 @@ export function AddCycleDialog({
     const { date, hour, category, topic, minutes, energy } = formState;
     setErrors({});
     setFormError(null);
+    console.log("[AddCycleDialog] отправка формы:", {
+      date,
+      hour,
+      category,
+      topic,
+      minutes,
+      energy,
+    });
     try {
-      await api.addCycle({
+      const result = await api.addCycle({
         date,
         hour,
         category,
@@ -76,8 +87,12 @@ export function AddCycleDialog({
         minutes: Number(minutes),
         energy,
       });
+      console.log("[AddCycleDialog] цикл добавлен:", result);
       handleCancel();
+      // журнал перечитываем после записи: иначе счётчик циклов в UI устареет
+      onAdded?.();
     } catch (e) {
+      console.error("[AddCycleDialog] ошибка добавления:", e);
       // Err(HashMap) из Rust приходит объектом, прочие ошибки Tauri — строкой
       if (e && typeof e === "object") {
         // "_form" — ошибка не по полю (например, файловая), её показываем внизу
@@ -344,7 +359,7 @@ export function AddCycleDialog({
           </span>
         )}
         <div className="flex gap-2.5">
-          <Button onClick={handleCancel} >Отмена</Button>
+          <Button onClick={handleCancel}>Отмена</Button>
           <Button variant="primary" onClick={handleSubmit}>
             <IconCheck className="size-4" />
             {isEdit ? "Сохранить" : "Добавить"}

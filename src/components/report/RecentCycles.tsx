@@ -2,7 +2,16 @@ import { cn } from "../../lib/cn";
 import { pad2, truncate } from "../../lib/format";
 import type { Cycle } from "../../lib/types";
 import { RowMenu } from "../overlays";
-import { Button, Card, CardHeader, CategoryPill, EnergyDots, IconButton, IconDots, IconPlus } from "../ui";
+import {
+  Button,
+  Card,
+  CardHeader,
+  CategoryPill,
+  EnergyDots,
+  IconButton,
+  IconDots,
+  IconPlus,
+} from "../ui";
 
 const COLS =
   "grid grid-cols-[120px_76px_140px_minmax(0,1fr)_76px_110px_40px] gap-3";
@@ -10,18 +19,28 @@ const COLS =
 interface RecentCyclesProps {
   cycles: Cycle[];
   total: number;
-  showAll?: boolean;
+  setShowAll: (v: boolean) => void;
+  showAll: boolean;
   /** строка с открытым меню — только для просмотра вёрстки */
   menuOpenIndex?: number | null;
+  setOpenAddCycle: (v: boolean) => void;
+  showRowMenu: number | null;
+  setRowMenu: (v: number | null) => void;
 }
 
 /** §5.9: последние циклы; тема длиннее 20 символов обрезается */
 export function RecentCycles({
   cycles,
   total,
-  showAll = false,
-  menuOpenIndex = null,
+  menuOpenIndex,
+  showAll,
+  setShowAll,
+  setOpenAddCycle,
+  showRowMenu,
+  setRowMenu,
 }: RecentCyclesProps) {
+  const cyclesData = showAll ? cycles : cycles.slice(-5).reverse();
+
   return (
     <Card
       aria-labelledby="h-last"
@@ -33,7 +52,12 @@ export function RecentCycles({
         tag="§5.9"
         actions={
           <div className="flex items-center gap-2.5">
-            <Button variant="ghost" size="sm" aria-expanded={showAll}>
+            <Button
+              variant="ghost"
+              size="sm"
+              aria-expanded={showAll}
+              onClick={() => setShowAll(!showAll)}
+            >
               {showAll ? "Свернуть" : `Показать все (${total})`}
             </Button>
             <Button
@@ -41,6 +65,7 @@ export function RecentCycles({
               size="sm"
               aria-haspopup="dialog"
               className="pl-2.5"
+              onClick={() => setOpenAddCycle(true)}
             >
               <IconPlus className="size-4" />
               Добавить
@@ -69,7 +94,7 @@ export function RecentCycles({
           </span>
         </div>
 
-        {cycles.map((c, i) => {
+        {cyclesData.map((c, i) => {
           const menuOpen = menuOpenIndex === i;
           const opensUp = cycles.length > 2 && i >= cycles.length - 2;
           return (
@@ -101,14 +126,20 @@ export function RecentCycles({
               </span>
               <span role="cell" className="relative flex justify-end">
                 <IconButton
+                  onClick={() => setRowMenu(menuOpen ? null : i)}
                   label={`Действия с циклом ${c.date}, ${c.topic}`}
                   aria-haspopup="menu"
                   aria-expanded={menuOpen}
-                  active={menuOpen}
+                  active={showRowMenu === i}
                 >
                   <IconDots className="size-4" />
                 </IconButton>
-                {menuOpen && <RowMenu placement={opensUp ? "up" : "down"} />}
+                {showRowMenu === i && (
+                  <RowMenu
+                    placement={opensUp ? "up" : "down"}
+                    onClose={() => setRowMenu(null)}
+                  />
+                )}
               </span>
             </div>
           );
