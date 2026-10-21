@@ -1,32 +1,23 @@
-import { cn } from '../../lib/cn';
-import { plural } from '../../lib/format';
-import type { ParseError } from '../../lib/types';
-import type { FileInfo, PanelId } from '../../lib/view';
-import { ErrorsPopover, FileInfoPopover } from '../overlays';
-import { Button, IconAlert, IconChevronDown, IconFile, IconPlus, IconUpload, Logo } from '../ui';
+import { useState } from "react";
+import { Button, IconPlus, Logo } from "../ui";
 
-interface TopBarProps {
-  file: FileInfo;
-  errors: ParseError[];
-  openPanel: PanelId;
-}
-
-export function TopBar({ file, errors, openPanel }: TopBarProps) {
-  const errorsOpen = openPanel === 'errors';
-  const fileOpen = openPanel === 'file';
+export function TopBar() {
+  const [showAddCycle, setShowAddCycle] = useState(false);
 
   return (
     <header className="glass relative z-60 flex items-center justify-between gap-4 rounded-[20px] py-3 pr-3.5 pl-5">
       <div className="flex items-center gap-3">
         <Logo />
-        <span className="font-display text-[17px] font-semibold tracking-[-0.01em]">study-log</span>
-        <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1.25 font-mono text-xs text-muted">
-          локально · без сети
+        <span className="font-display text-[17px] font-semibold tracking-[-0.01em]">
+          MyActivity
         </span>
+        {/* <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1.25 font-mono text-xs text-muted">
+          локально · без сети
+        </span> */}
       </div>
 
       <div className="flex items-center gap-2.5">
-        <div className="relative">
+        {/* <div className="relative">
           <Button
             variant="danger"
             aria-haspopup="dialog"
@@ -54,13 +45,18 @@ export function TopBar({ file, errors, openPanel }: TopBarProps) {
             <IconChevronDown className={cn('size-3.5 text-muted', fileOpen && 'rotate-180')} />
           </button>
           {fileOpen && <FileInfoPopover file={file} />}
-        </div>
+        </div> */}
 
-        <Button variant="secondary" className="px-4">
+        {/* <Button variant="secondary" className="px-4">
           <IconUpload className="size-4" />
           Открыть файл
-        </Button>
-        <Button variant="primary" aria-haspopup="dialog" className="pl-3.5">
+        </Button> */}
+        <Button
+          variant="primary"
+          aria-haspopup="dialog"
+          className="pl-3.5"
+          onClick={() => setShowAddCycle(true)}
+        >
           <IconPlus className="size-4.5" />
           Добавить цикл
         </Button>
