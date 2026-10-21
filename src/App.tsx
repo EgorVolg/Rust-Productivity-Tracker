@@ -18,7 +18,8 @@ import {
 } from "./components";
 import { PreviewState } from "./lib/view";
 import * as demoData from "./data/demo";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useJournal } from "./lib";
 
 /**
  * Только для просмотра вёрстки: что показать открытым.
@@ -28,40 +29,67 @@ const preview: PreviewState = {
   panel: null,
   empty: false,
   toast: false,
-  rowMenu: null,
+
   heatTooltip: null,
 };
 
 export default function App() {
-  const { file } = demoData;
   const [openAddCycle, setOpenAddCycle] = useState(false);
+  const { journal, loading, error, loadJournal } = useJournal();
+  const [showAllCycles, setShowAllCycles] = useState(false);
+  const [showRowMenu, setRowMenu] = useState<number | null>(null);
+
+  function handleAddCycle(show: boolean) {
+    setOpenAddCycle(show);
+  }
+
+  useEffect(() => {
+    if (journal) {
+      console.log("[App] Список обновлён с сервера:", journal);
+    }
+  }, [journal]);
+
+  if (loading) {
+    return <div>Загрузка...</div>;
+  }
+
+  if (error) {
+    return <div>Ошибка: {error}</div>;
+  }
+
+  if (!journal) {
+    return <div>Нет данных</div>;
+  }
 
   return (
     <div className="relative min-h-screen overflow-hidden">
       <Background />
 
       <div className="relative z-1 mx-auto flex max-w-340 flex-col gap-6 px-10 pt-8 pb-14">
-        <TopBar setOpenAddCycle={setOpenAddCycle} />
+        <TopBar setOpenAddCycle={handleAddCycle} />
 
         <FilterBar
           filters={demoData.filters}
           counts={demoData.categoryCounts}
           shown={preview.empty ? 0 : demoData.summary.cycles}
-          total={file.cycles}
+          total={journal.lineCount}
           presets={demoData.periodPresets}
           openPanel={preview.panel}
         />
 
         <main className="flex flex-col gap-6">
-          <ReportHeader
-            fileName={file.name}
+          {/* <ReportHeader
+            fileName="journal.json"
             period={
-              preview.empty ? "период данных: —" : `${file.from} → ${file.to}`
+              preview.empty ? "период данных: —" : `${journal.from} → ${journal.to}`
             }
             filtersText={`фильтры не применены · топ-${demoData.filters.top} слов`}
-          />
+          /> */}
 
-          <SummaryCards summary={preview.empty ? null : demoData.summary} />
+          <SummaryCards
+            journal={journal}
+            summary={preview.empty ? null : demoData.summary}
+          />
 
           {preview.empty ? (
             <EmptyState />
@@ -89,21 +117,29 @@ export default function App() {
               </div>
 
               <RecentCycles
-                cycles={demoData.recentCycles}
-                total={demoData.summary.cycles}
-                menuOpenIndex={preview.rowMenu}
+                cycles={journal.cycles}
+                total={journal.lineCount}
+                setShowAll={setShowAllCycles}
+                showAll={showAllCycles}
+                setOpenAddCycle={handleAddCycle}
+                showRowMenu={showRowMenu}
+                setRowMenu={setRowMenu}
               />
             </>
           )}
         </main>
       </div>
 
-      <OpenFileDialog open={preview.panel === "open-file"} onOpenChange={() => {}} />
+      <OpenFileDialog
+        open={preview.panel === "open-file"}
+        onOpenChange={() => {}}
+      />
       <AddCycleDialog
         draft={demoData.cycleDraft}
         suggestions={demoData.topicSuggestions}
         open={openAddCycle}
-        onOpenChange={setOpenAddCycle}
+        onOpenChange={handleAddCycle}
+        onAdded={loadJournal}
       />
       {preview.toast && <Toast message="Цикл добавлен · rust, 50 мин" undo />}
     </div>

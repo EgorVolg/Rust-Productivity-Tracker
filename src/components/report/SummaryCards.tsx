@@ -1,47 +1,81 @@
-import type { ReactNode } from 'react';
-import { cn } from '../../lib/cn';
-import { DASH } from '../../lib/format';
-import type { Summary } from '../../lib/view';
-import { Duration } from '../ui';
+import type { ReactNode } from "react";
+import { cn } from "../../lib/cn";
+import { DASH, plural } from "../../lib/format";
+import type { Summary } from "../../lib/view";
+import { Duration } from "../ui";
+import { CycleInput, Journal } from "@/lib";
 
-/** §5.2. `summary = null` — нет данных после фильтра, всё выводится как «—» (§6.4) */
-export function SummaryCards({ summary }: { summary: Summary | null }) {
+export function SummaryCards({
+  journal,
+  summary,
+}: {
+  journal: Journal;
+  summary: Summary | null;
+}) {
   const s = summary;
   const empty = s === null;
+
+  const totalTime = journal.cycles.reduce(
+    (acc: number, cycle: CycleInput) => acc + cycle.minutes,
+    0,
+  );
+
+  let daysInWork = 0;
+  for (const days of journal.cycles) {
+    if (days.minutes <= 240) {
+      daysInWork = 0;
+    }
+    daysInWork++;
+  }
 
   return (
     <section aria-label="Сводка" className="grid grid-cols-4 gap-5">
       <Stat
         label="Всего циклов"
-        value={s ? s.cycles : DASH}
-        caption={s ? `rust ${s.rust} · english ${s.english}` : 'нет циклов'}
+        value={journal.lineCount}
+        caption={s ? `rust ${s.rust} · english ${s.english}` : "нет циклов"}
         empty={empty}
       />
       <Stat
         label="Всего времени"
-        value={s ? <Duration minutes={s.totalMinutes} /> : DASH}
-        caption={s ? `${s.totalMinutes} мин` : DASH}
+        value={s ? <Duration minutes={totalTime} /> : DASH}
+        caption={s ? `${totalTime} мин` : DASH}
         empty={empty}
       />
-      <Stat label="Дней с работой" value={s ? s.days : DASH} caption={s ? 'уникальных дат' : DASH} empty={empty} />
+      <Stat
+        label="Дней в ударе &#128293;"
+        value={daysInWork + " " + plural(daysInWork, "день", "дня", "дней")}
+        caption="без остановки!"
+        empty={empty}
+      />
       <Stat
         label="Среднее в рабочий день"
-        value={s ? <Duration minutes={s.avgPerDay} /> : DASH}
-        caption={s ? `${s.avgPerDay.toFixed(1)} мин` : DASH}
+        value={<Duration minutes={totalTime / daysInWork} />}
+        caption={`${(totalTime / daysInWork).toFixed(1)} мин`}
         empty={empty}
       />
     </section>
   );
 }
 
-function Stat({ label, value, caption, empty }: { label: string; value: ReactNode; caption: string; empty: boolean }) {
+function Stat({
+  label,
+  value,
+  caption,
+  empty,
+}: {
+  label: string;
+  value: ReactNode;
+  caption: string;
+  empty: boolean;
+}) {
   return (
     <div className="glass flex flex-col gap-3.5 px-6 py-5.5">
       <span className="text-[13px] font-medium text-muted">{label}</span>
       <span
         className={cn(
-          'font-display text-[38px] leading-none font-medium tracking-[-0.02em]',
-          empty ? 'text-subtle' : 'text-fg',
+          "font-display text-[38px] leading-none font-medium tracking-[-0.02em]",
+          empty ? "text-subtle" : "text-fg",
         )}
       >
         {value}

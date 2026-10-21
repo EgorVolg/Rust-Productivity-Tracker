@@ -1,25 +1,37 @@
-import type { ReactNode } from 'react';
-import { cn } from '../../lib/cn';
-import { plural } from '../../lib/format';
-import type { Filters } from '../../lib/types';
-import type { PanelId } from '../../lib/view';
-import { CategoryPopover, PeriodPopover, TopWordsPopover } from '../overlays';
-import { Button, IconCalendar, IconChevronDown, IconFilter, IconX } from '../ui';
+import type { ReactNode } from "react";
+import { cn } from "../../lib/cn";
+import { plural } from "../../lib/format";
+import type { Filters } from "../../lib/types";
+import type { PanelId } from "../../lib/view";
+import { CategoryPopover, PeriodPopover, TopWordsPopover } from "../overlays";
+import {
+  Button,
+  IconCalendar,
+  IconChevronDown,
+  IconFilter,
+  IconX,
+} from "../ui";
 
 interface FilterBarProps {
   filters: Filters;
-  counts: Record<Filters['category'], number>;
-  shown: number;
+  counts: Record<Filters["category"], number>;
   total: number;
   presets: { label: string; active: boolean }[];
   openPanel: PanelId;
 }
 
-export function FilterBar({ filters, counts, shown, total, presets, openPanel }: FilterBarProps) {
-  const periodActive = filters.from !== '' || filters.to !== '';
-  const anyFilter = filters.category !== 'all' || periodActive || filters.top !== 10;
+export function FilterBar({
+  filters,
+  counts,
+  total,
+  presets,
+  openPanel,
+}: FilterBarProps) {
+  const periodActive = filters.from !== "" || filters.to !== "";
+  const anyFilter =
+    filters.category !== "all" || periodActive || filters.top !== 10;
   const periodLabel = !periodActive
-    ? 'Всё время'
+    ? "Всё время"
     : filters.from && filters.to
       ? `${filters.from} — ${filters.to}`
       : filters.from
@@ -39,21 +51,23 @@ export function FilterBar({ filters, counts, shown, total, presets, openPanel }:
 
         <FilterButton
           label="Категория"
-          value={filters.category === 'all' ? 'Все' : filters.category}
-          active={filters.category !== 'all'}
-          open={openPanel === 'category'}
-          popover={<CategoryPopover selected={filters.category} counts={counts} />}
+          value={filters.category === "all" ? "Все" : filters.category}
+          active={filters.category !== "all"}
+          open={openPanel === "category"}
+          popover={
+            <CategoryPopover selected={filters.category} counts={counts} />
+          }
         />
         <FilterButton
           icon={<IconCalendar className="size-4 text-muted" />}
           label="Период"
           value={periodLabel}
           active={periodActive}
-          open={openPanel === 'period'}
+          open={openPanel === "period"}
           popover={
             <PeriodPopover
-              from={filters.from || '2026-10-07'}
-              to={filters.to || '2026-10-20'}
+              from={filters.from || "2026-10-07"}
+              to={filters.to || "2026-10-20"}
               presets={presets}
               hint="Формат ГГГГ-ММ-ДД · в периоде 36 циклов"
             />
@@ -63,14 +77,15 @@ export function FilterBar({ filters, counts, shown, total, presets, openPanel }:
           label="Топ слов"
           value={String(filters.top)}
           active={filters.top !== 10}
-          open={openPanel === 'top'}
+          open={openPanel === "top"}
           popover={<TopWordsPopover value={filters.top} />}
         />
       </div>
 
       <div className="flex items-center gap-3.5">
         <span className="text-[13px] font-medium text-muted">
-          Показано {shown} из {total} {plural(total, 'цикла', 'циклов', 'циклов')}
+          Показано {"NaN"} из {total}
+          {plural(total, "цикла", "циклов", "циклов")}
         </span>
         {anyFilter && (
           <Button variant="ghost" className="px-3.5">
@@ -92,7 +107,14 @@ interface FilterButtonProps {
   popover: ReactNode;
 }
 
-function FilterButton({ icon, label, value, active, open, popover }: FilterButtonProps) {
+function FilterButton({
+  icon,
+  label,
+  value,
+  active,
+  open,
+  popover,
+}: FilterButtonProps) {
   return (
     <div className="relative">
       <button
@@ -100,18 +122,20 @@ function FilterButton({ icon, label, value, active, open, popover }: FilterButto
         aria-haspopup="dialog"
         aria-expanded={open}
         className={cn(
-          'flex h-11 items-center gap-2 rounded-[14px] border px-3.5 text-sm font-medium text-fg',
+          "flex h-11 items-center gap-2 rounded-[14px] border px-3.5 text-sm font-medium text-fg",
           open
-            ? 'border-lilac/38 bg-accent/26'
+            ? "border-lilac/38 bg-accent/26"
             : active
-              ? 'border-lilac/38 bg-accent/16'
-              : 'border-white/12 bg-well/35',
+              ? "border-lilac/38 bg-accent/16"
+              : "border-white/12 bg-well/35",
         )}
       >
         {icon}
         <span className="text-muted">{label}</span>
         <span className="font-mono font-semibold">{value}</span>
-        <IconChevronDown className={cn('size-3.5 text-muted', open && 'rotate-180')} />
+        <IconChevronDown
+          className={cn("size-3.5 text-muted", open && "rotate-180")}
+        />
       </button>
       {open && popover}
     </div>
