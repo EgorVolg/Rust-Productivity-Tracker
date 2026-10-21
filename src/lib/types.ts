@@ -1,6 +1,6 @@
-export type Category = 'rust' | 'english';
+export type Category = 'rust' | 'english' | 'other' | 'work' | 'health' | 'family' | 'hobby' | 'leisure' | 'other';
 
-export const CATEGORIES: readonly Category[] = ['rust', 'english'];
+export const CATEGORIES: readonly Category[] = ['rust', 'english', 'other', 'work', 'health', 'family', 'hobby', 'leisure', 'other'];
 
 /** Один цикл — одна строка CSV (§2.2). */
 export interface Cycle {
