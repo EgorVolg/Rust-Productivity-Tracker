@@ -11,7 +11,7 @@ export function FileInfoPopover({ file }: { file: FileInfo }) {
   ];
 
   return (
-    <Popover align="right" aria-labelledby="file-title" className="w-[340px] gap-3.5 p-5">
+    <Popover align="right" aria-labelledby="file-title" className="w-85 gap-3.5 p-5">
       <div className="flex flex-col gap-1">
         <h3 id="file-title" className="m-0 font-mono text-[15px] font-semibold">
           {file.name}

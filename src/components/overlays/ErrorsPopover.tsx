@@ -9,7 +9,7 @@ export function ErrorsPopover({ errors }: { errors: ParseError[] }) {
   const rest = errors.length - shown.length;
 
   return (
-    <Popover align="right" aria-labelledby="err-title" className="w-[440px] gap-3.5 p-5">
+    <Popover align="right" aria-labelledby="err-title" className="w-110 gap-3.5 p-5">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
           <h3 id="err-title" className="m-0 text-[15px] font-semibold">
