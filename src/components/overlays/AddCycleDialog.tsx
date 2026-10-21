@@ -80,7 +80,10 @@ export function AddCycleDialog({
     } catch (e) {
       // Err(HashMap) из Rust приходит объектом, прочие ошибки Tauri — строкой
       if (e && typeof e === "object") {
-        setErrors(e as Record<string, string>);
+        // "_form" — ошибка не по полю (например, файловая), её показываем внизу
+        const { _form, ...fieldErrors } = e as Record<string, string>;
+        setErrors(fieldErrors);
+        if (_form) setFormError(_form);
       } else {
         setFormError(String(e));
       }
