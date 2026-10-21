@@ -15,6 +15,7 @@ import {
   ToggleChip,
   TopicInput,
 } from "../ui";
+import { api } from "@/lib";
 
 const MINUTE_PRESETS = [15, 25, 50, 90];
 const ENERGY = [1, 2, 3, 4, 5];
@@ -39,8 +40,14 @@ export function AddCycleDialog({
   const isEdit = draft.mode === "edit";
   const errors = draft.errors ?? {};
   const handleCancel = () => {
+    setFormState(draft);
     onOpenChange(false);
   };
+
+  async function handleSubmit() {
+    await api.addCycle(formState);
+    onOpenChange(false);
+  }
 
   const [formState, setFormState] = useState<CycleDraft>(draft);
   // подсветка — блок текущего времени суток, а не выбранного часа
@@ -100,7 +107,9 @@ export function AddCycleDialog({
                 inputMode="numeric"
                 autoComplete="off"
                 value={formState.date}
-                onChange={(e) => setFormState({ ...formState, date: e.target.value })}
+                onChange={(e) =>
+                  setFormState({ ...formState, date: e.target.value })
+                }
                 invalid={Boolean(errors.date)}
                 aria-describedby={errors.date ? "ad-date-err" : undefined}
                 className="flex-1"
@@ -283,8 +292,8 @@ export function AddCycleDialog({
           {formState.note}
         </span>
         <div className="flex gap-2.5">
-          <Button onClick={handleCancel}>Отмена</Button>
-          <Button variant="primary">
+          <Button onClick={handleCancel} >Отмена</Button>
+          <Button variant="primary" onClick={handleSubmit}>
             <IconCheck className="size-4" />
             {isEdit ? "Сохранить" : "Добавить"}
           </Button>
