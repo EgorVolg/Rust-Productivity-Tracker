@@ -69,4 +69,35 @@
   button {
     cursor: pointer;
   }
+
+  /*
+   * Тонкий скроллбар в цвет темы. Только ::-webkit-scrollbar: его понимают
+   * WebView2 (Windows) и WebKit (macOS/Linux). scrollbar-color не задаём —
+   * в Chromium он отключает эти псевдоэлементы.
+   */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* прозрачная рамка + background-clip дают отступ от края */
+  ::-webkit-scrollbar-thumb {
+    background-color: rgb(182 156 255 / 0.28);
+    background-clip: padding-box;
+    border: 3px solid transparent;
+    border-radius: 999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(182 156 255 / 0.5);
+  }
+
+  ::-webkit-scrollbar-thumb:active {
+    background-color: rgb(182 156 255 / 0.7);
+  }
 }
