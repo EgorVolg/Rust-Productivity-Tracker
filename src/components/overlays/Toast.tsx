@@ -1,6 +1,14 @@
-import { Button, IconCheck, IconX } from '../ui';
+import { Button, IconCheck, IconX } from "../ui";
 
-export function Toast({ message, undo = false }: { message: string; undo?: boolean }) {
+export function Toast({
+  message,
+  undo = false,
+  onClose,
+}: {
+  message: string;
+  undo?: boolean;
+  onClose: () => void;
+}) {
   return (
     <div
       role="status"
@@ -19,6 +27,7 @@ export function Toast({ message, undo = false }: { message: string; undo?: boole
         type="button"
         aria-label="Закрыть уведомление"
         className="flex size-9 items-center justify-center rounded-[10px] text-muted"
+        onClick={onClose}
       >
         <IconX className="size-3.5" />
       </button>

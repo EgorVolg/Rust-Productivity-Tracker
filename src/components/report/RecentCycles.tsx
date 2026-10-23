@@ -26,6 +26,7 @@ interface RecentCyclesProps {
   setOpenAddCycle: (v: boolean) => void;
   showRowMenu: number | null;
   setRowMenu: (v: number | null) => void;
+  setAddOrEdit: (v: "add" | "edit") => void;
 }
 
 /** §5.9: последние циклы; тема длиннее 20 символов обрезается */
@@ -38,6 +39,7 @@ export function RecentCycles({
   setOpenAddCycle,
   showRowMenu,
   setRowMenu,
+  setAddOrEdit,
 }: RecentCyclesProps) {
   const cyclesData = showAll ? cycles : cycles.slice(-5).reverse();
 
@@ -48,24 +50,32 @@ export function RecentCycles({
     >
       <CardHeader
         id="h-last"
-        title={showAll ? `Все циклы · ${total}` : "Последние 5 циклов"}
-        tag="§5.9"
+        title={
+          showAll
+            ? `Все циклы · ${total}`
+            : `Последние ${cyclesData.length} циклов`
+        }
         actions={
           <div className="flex items-center gap-2.5">
-            <Button
-              variant="ghost"
-              size="sm"
-              aria-expanded={showAll}
-              onClick={() => setShowAll(!showAll)}
-            >
-              {showAll ? "Свернуть" : `Показать все (${total})`}
-            </Button>
+            {total > 5 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-expanded={showAll}
+                onClick={() => setShowAll(!showAll)}
+              >
+                {showAll ? "Свернуть" : `Показать все (${total})`}
+              </Button>
+            )}
             <Button
               variant="soft"
               size="sm"
               aria-haspopup="dialog"
               className="pl-2.5"
-              onClick={() => setOpenAddCycle(true)}
+              onClick={() => {
+                setAddOrEdit("add");
+                setOpenAddCycle(true);
+              }}
             >
               <IconPlus className="size-4" />
               Добавить
@@ -136,6 +146,8 @@ export function RecentCycles({
                 </IconButton>
                 {showRowMenu === i && (
                   <RowMenu
+                    setOpenAddCycle={setOpenAddCycle}
+                    setAddOrEdit={() => setAddOrEdit("edit")}
                     placement={opensUp ? "up" : "down"}
                     onClose={() => setRowMenu(null)}
                   />

@@ -2,13 +2,18 @@ import type { ReactNode } from "react";
 import { useEffect, useRef } from "react";
 import { cn } from "../../lib/cn";
 import { IconCopy, IconPencil, IconTrash } from "../ui";
+import { CycleDialogState } from "@/App";
 
 export function RowMenu({
   placement = "down",
   onClose,
+  setAddOrEdit,
+  setOpenAddCycle,
 }: {
   placement?: "down" | "up";
   onClose: () => void;
+  setAddOrEdit: (value: CycleDialogState) => void;
+  setOpenAddCycle: (value: boolean) => void;
 }) {
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -33,7 +38,13 @@ export function RowMenu({
         placement === "up" ? "bottom-[calc(100%+6px)]" : "top-[calc(100%+6px)]",
       )}
     >
-      <MenuItem icon={<IconPencil className="size-4 text-soft" />}>
+      <MenuItem
+        icon={<IconPencil className="size-4 text-soft" />}
+        onClick={() => {
+          setAddOrEdit("edit");
+          setOpenAddCycle(true);
+        }}
+      >
         Изменить
       </MenuItem>
       <MenuItem icon={<IconCopy className="size-4 text-soft" />}>
@@ -54,10 +65,12 @@ function MenuItem({
   icon,
   danger = false,
   children,
+  onClick,
 }: {
   icon: ReactNode;
   danger?: boolean;
   children: ReactNode;
+  onClick?: () => void;
 }) {
   return (
     <button
@@ -67,6 +80,7 @@ function MenuItem({
         "flex h-10 items-center gap-2.5 rounded-[10px] px-2.5 text-left text-sm font-medium hover:bg-white/6",
         danger ? "text-danger" : "text-fg",
       )}
+      onClick={onClick}
     >
       {icon}
       {children}

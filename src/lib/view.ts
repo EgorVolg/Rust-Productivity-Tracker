@@ -1,5 +1,4 @@
 // Типы для отображения отчёта. Модель данных — в ./types.ts.
-import type { Category } from './types';
 
 export interface FileInfo {
   name: string;
@@ -21,7 +20,7 @@ export interface Summary {
 }
 
 export interface CategoryStat {
-  category: Category;
+  category: string;
   cycles: number;
   minutes: number;
   /** доля в процентах, без округления (§6.2) */
@@ -37,7 +36,6 @@ export interface LengthStat {
 export interface EnergyStat {
   avg: number;
   median: number;
-  /** индекс 0 = оценка 1 */
   distribution: number[];
 }
 
@@ -51,7 +49,7 @@ export interface CycleDraft {
   date: string;
   weekdayLabel: string;
   hour: number;
-  category: Category;
+  category: string;
   topic: string;
   minutes: string;
   energy: number;
@@ -66,6 +64,5 @@ export type PanelId = 'category' | 'period' | 'top' | 'file' | 'errors' | 'open-
 export interface PreviewState {
   panel: PanelId;
   empty: boolean;
-  toast: boolean;
   heatTooltip: { day: number; hour: number } | null;
 }
