@@ -1,26 +1,18 @@
-//! Данные цикла с формы и их проверка.
-
 use serde::Deserialize;
 use std::collections::HashMap;
 
 #[derive(Debug, Deserialize)]
 pub struct CycleInput {
-    /// ГГГГ-ММ-ДД
     pub date: String,
-    /// 0–23
     pub hour: u8,
     pub category: String,
     pub topic: String,
-    /// 1–600
     pub minutes: u16,
-    /// 1–5
     pub energy: u8,
 }
 
-/// Символы, которые ломают строку CSV.
 const FORBIDDEN_CHARS: [char; 4] = [',', '"', '\n', '\r'];
 
-/// Общая проверка текстового поля: не пустое, без символов CSV, не длиннее max_len.
 fn check_text(value: &str, label: &str, max_len: usize) -> Result<(), String> {
     let value = value.trim();
     if value.is_empty() {
@@ -37,7 +29,6 @@ fn check_text(value: &str, label: &str, max_len: usize) -> Result<(), String> {
 }
 
 impl CycleInput {
-    /// Проверяет все поля; в Err — карта «поле → сообщение».
     pub fn validate(&self) -> Result<(), HashMap<String, String>> {
         let mut errors = HashMap::new();
 
@@ -71,7 +62,6 @@ impl CycleInput {
         if errors.is_empty() {
             Ok(())
         } else {
-            println!("Validation errors: {:?}", errors);
             Err(errors)
         }
     }
