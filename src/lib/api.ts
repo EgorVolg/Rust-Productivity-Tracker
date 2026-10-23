@@ -13,6 +13,7 @@ export interface CycleInput {
 export interface Journal {
   cycles: CycleInput[];
   lineCount: number;
+  streakDays: number;
 }
 
 export const api = {
