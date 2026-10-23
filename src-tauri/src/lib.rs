@@ -10,6 +10,7 @@ pub fn run() {
             commands::add_cycle,
             commands::load_journal,
             commands::delete_cycle,
+            commands::edit_cycle,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

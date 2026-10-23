@@ -39,3 +39,10 @@ pub fn delete_cycle(app: tauri::AppHandle, id: String) -> Result<(), String> {
     crate::journal::delete_cycle(&path, id)?;
     Ok(())
 }
+
+#[tauri::command]
+pub fn edit_cycle(app: tauri::AppHandle, id: String, cycle_form: CycleInput) -> Result<(), String> {
+    let path = journal_path(&app).map_err(|e| e.to_string())?;
+    crate::journal::edit_cycle(&path, id, cycle_form)?;
+    Ok(())
+}

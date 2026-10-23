@@ -8,7 +8,7 @@ use std::{
 use tauri::Manager;
 use uuid::Uuid;
 
-use crate::cycle::CycleInput;
+use crate::{cycle::CycleInput};
 
 #[derive(Debug, Serialize)]
 pub struct Cycle {
@@ -287,35 +287,26 @@ fn parse_journal(content: &str) -> ParseResult {
     }
 }
 
-pub fn load_journal(path: &Path) -> Result<ParseResult, String> {
-    ensure_migrated(path)?;
-    let content = read_journal_file(path)?;
-    let mut result = parse_journal(&content);
-    result.streak_days = compute_streak(&result.cycles, today());
-    Ok(result)
+enum RewriteAction {
+    Delete,
+    Replace(String),
 }
 
-#[derive(Debug, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct DeleteResult {
-    pub removed_id: Uuid,
-    pub streak_days: u16,
-}
-
-pub fn delete_cycle(path: &Path, id: String) -> Result<DeleteResult, String> {
-    // парсим id один раз до любого I/O — при невалидном id сразу выходим
-    let removed_id = Uuid::parse_str(&id).map_err(|e| format!("Неверный формат ID: {e}"))?;
-
+fn rewrite_with_id(
+    path: &Path,
+    id: &str,
+    action: RewriteAction,
+) -> Result<HashMap<NaiveDate, u32>, String> {
     ensure_migrated(path)?;
     let content = read_journal_file(path)?;
 
     let mut out = String::with_capacity(content.len());
     let mut agg: HashMap<NaiveDate, u32> = HashMap::new();
-    let mut removed = false;
+    let mut matched = false;
     let mut first = true;
+    let mut action = Some(action);
 
-    for line in content.lines() {
-        // заголовок сохраняем как есть
+    for line in content.lines() { 
         if first {
             first = false;
             out.push_str(line);
@@ -328,15 +319,26 @@ pub fn delete_cycle(path: &Path, id: String) -> Result<DeleteResult, String> {
         }
 
         let parts: Vec<&str> = line.split(',').map(str::trim).collect();
-        if parts.first().copied() == Some(id.as_str()) {
-            removed = true;
-            continue; // строку выкидываем
-        }
+        let is_target = !matched && parts.first().copied() == Some(id);
 
-        out.push_str(line);
+        // None => строку выкидываем; Some(_) => пишем как есть или с заменой
+        let new_line: Option<String> = if is_target {
+            matched = true;
+            match action.take().expect("action consumed once") {
+                RewriteAction::Delete => None,
+                RewriteAction::Replace(s) => Some(s),
+            }
+        } else {
+            Some(line.to_string())
+        };
+
+        let Some(written) = new_line else { continue };
+
+        out.push_str(&written);
         out.push('\n');
 
         // лёгкий агрегат для streak: date + minutes, без validate
+        let parts: Vec<&str> = written.split(',').map(str::trim).collect();
         if let (Some(d), Some(m)) = (parts.get(1), parts.get(6)) {
             if let (Ok(date), Ok(min)) =
                 (NaiveDate::parse_from_str(d, "%Y-%m-%d"), m.parse::<u32>())
@@ -346,17 +348,85 @@ pub fn delete_cycle(path: &Path, id: String) -> Result<DeleteResult, String> {
         }
     }
 
-    if !removed {
+    if !matched {
         return Err(format!("Цикл с id {id} не найден"));
     }
 
     std::fs::write(path, out).map_err(|e| format!("Не удалось записать файл: {e}"))?;
+    Ok(agg)
+}
 
+pub fn load_journal(path: &Path) -> Result<ParseResult, String> {
+    ensure_migrated(path)?;
+    let content = read_journal_file(path)?;
+    let mut result = parse_journal(&content);
+    result.streak_days = compute_streak(&result.cycles, today());
+    Ok(result)
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DeleteResult {
+    pub cycle_id: Uuid,
+    pub streak_days: u16,
+}
+
+pub fn delete_cycle(path: &Path, id: String) -> Result<DeleteResult, String> {
+    // парсим id один раз до любого I/O — при невалидном id сразу выходим
+    let cycle_id = Uuid::parse_str(&id).map_err(|e| format!("Неверный формат ID: {e}"))?;
+
+    let agg = rewrite_with_id(path, &id, RewriteAction::Delete)?;
     let streak_days = compute_streak_from_agg(&agg, today());
-    println!("[journal] удалён цикл id={removed_id}, streak={streak_days}");
 
+    println!("[journal] удалён цикл id={cycle_id}, streak={streak_days}");
     Ok(DeleteResult {
-        removed_id,
+        cycle_id,
+        streak_days,
+    })
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EditResult {
+    pub cycle_id: Uuid,
+    pub streak_days: u16,
+}
+
+pub fn edit_cycle(path: &Path, id: String, cycle_form: CycleInput) -> Result<EditResult, String> {
+    // 1. Валидируем id и данные формы до любого I/O.
+    let cycle_id = Uuid::parse_str(&id).map_err(|e| format!("Неверный формат ID: {e}"))?;
+
+    cycle_form.validate().map_err(|errors| {
+        errors
+            .into_iter()
+            .map(|(field, msg)| format!("{field}: {msg}"))
+            .collect::<Vec<_>>()
+            .join("; ")
+    })?;
+
+    let date = NaiveDate::parse_from_str(&cycle_form.date, "%Y-%m-%d")
+        .map_err(|e| format!("Не удалось разобрать дату: {e}"))?;
+
+    // 2. Строка в том же формате, что пишет write_to_journal.
+    let new_line = format!(
+        "{},{},{},{},{},{},{},{}",
+        cycle_id,
+        date.format("%Y-%m-%d"),
+        date.weekday().number_from_monday(),
+        cycle_form.hour,
+        cycle_form.category.trim().to_lowercase(),
+        cycle_form.topic.trim(),
+        cycle_form.minutes,
+        cycle_form.energy
+    );
+
+    // 3. Переписываем файл и сразу получаем новый агрегат для streak.
+    let agg = rewrite_with_id(path, &id, RewriteAction::Replace(new_line))?;
+    let streak_days = compute_streak_from_agg(&agg, today());
+
+    println!("[journal] изменён цикл id={cycle_id}, streak={streak_days}");
+    Ok(EditResult {
+        cycle_id,
         streak_days,
     })
 }
