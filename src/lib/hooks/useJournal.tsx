@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { ParseResult } from "./types";
-import { api } from "./api";
+import { ParseResult } from "../types";
+import { api } from "../api";
 
 export function useJournal() {
   const [journal, setJournal] = useState<ParseResult | null>(null);
