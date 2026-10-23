@@ -1,18 +1,13 @@
-//! Команды для фронта: только связка модулей и перевод ошибок в формат для формы.
-
-use std::collections::HashMap;
-
 use crate::cycle::CycleInput;
 use crate::journal::{ParseResult, journal_path, write_to_journal};
+use std::collections::HashMap;
 
-/// Ошибки не по конкретному полю лежат в карте под этим ключом.
 const FORM_ERROR_KEY: &str = "_form";
 
 fn form_error(msg: String) -> HashMap<String, String> {
     HashMap::from([(FORM_ERROR_KEY.to_string(), msg)])
 }
 
-/// app подставляет Tauri, с фронта он не передаётся.
 #[tauri::command]
 pub fn add_cycle(
     app: tauri::AppHandle,
