@@ -29,6 +29,7 @@ interface RecentCyclesProps {
   showRowMenu: number | null;
   setRowMenu: (v: number | null) => void;
   setAddOrEdit: (v: "add" | "edit") => void;
+  handleCopyCycle: (id: string) => void;
 }
 
 /** §5.9: последние циклы; тема длиннее 20 символов обрезается */
@@ -43,8 +44,11 @@ export function RecentCycles({
   showRowMenu,
   setRowMenu,
   setAddOrEdit,
+  handleCopyCycle,
 }: RecentCyclesProps) {
-  const cyclesData = showAll ? cycles.reverse() : cycles.reverse().slice(-5);
+  const cyclesData = showAll
+    ? [...cycles].reverse()
+    : [...cycles].slice(-5).reverse();
 
   async function handleDeleteCycle(id: string) {
     try {
@@ -166,6 +170,7 @@ export function RecentCycles({
                     placement={opensUp ? "up" : "down"}
                     onClose={() => setRowMenu(null)}
                     onDeleteCycle={handleDeleteCycle}
+                    onCopyCycle={handleCopyCycle}
                   />
                 )}
               </span>

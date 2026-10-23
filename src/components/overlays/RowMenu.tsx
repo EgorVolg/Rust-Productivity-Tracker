@@ -11,6 +11,7 @@ export function RowMenu({
   setAddOrEdit,
   setOpenAddCycle,
   onDeleteCycle,
+  onCopyCycle,
 }: {
   id: string;
   placement?: "down" | "up";
@@ -18,6 +19,7 @@ export function RowMenu({
   setAddOrEdit: (value: CycleDialogState) => void;
   setOpenAddCycle: (value: boolean) => void;
   onDeleteCycle: (id: string) => void;
+  onCopyCycle: (id: string) => void;
 }) {
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -51,7 +53,10 @@ export function RowMenu({
       >
         Изменить
       </MenuItem>
-      <MenuItem onClick={() => {}} icon={<IconCopy className="size-4 text-soft" />}>
+      <MenuItem
+        onClick={() => onCopyCycle(id)}
+        icon={<IconCopy className="size-4 text-soft" />}
+      >
         Повторить сегодня
       </MenuItem>
       <div role="separator" className="mx-1.5 my-1 h-px bg-white/8" />

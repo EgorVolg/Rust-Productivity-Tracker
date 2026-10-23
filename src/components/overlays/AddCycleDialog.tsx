@@ -15,7 +15,7 @@ import {
   ToggleChip,
   TopicInput,
 } from "../ui";
-import { api, Cycle } from "@/lib";
+import { api, CycleInput } from "@/lib";
 import { CycleDialogState } from "@/App";
 
 const MINUTE_PRESETS = [15, 25, 50, 90];
@@ -27,8 +27,8 @@ const evening = (h: number) => h >= 18 && h < 24;
 interface AddCycleDialogProps {
   /** недавние темы выбранной категории */
   suggestions: string[];
-  /** последний цикл */
-  lastCycle: Cycle;
+  /** данные для формы */
+  formData: CycleInput;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** вызывается после успешной записи, чтобы перечитать журнал */
@@ -51,7 +51,7 @@ export function AddCycleDialog({
   onOpenChange,
   onAdded,
   addOrEdit,
-  lastCycle,
+  formData,
 }: AddCycleDialogProps) {
   /** ошибки от Rust: поле → сообщение */
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -68,9 +68,9 @@ export function AddCycleDialog({
   const draftForm: CycleDraft = {
     date: today(),
     hour: new Date().getHours(),
-    category: lastCycle.category,
-    topic: lastCycle.topic,
-    minutes: lastCycle.minutes.toString(),
+    category: formData.category,
+    topic: formData.topic,
+    minutes: formData.minutes.toString(),
     energy: 5,
     mode: "add",
     weekdayLabel: new Date().toLocaleDateString("ru-RU", { weekday: "long" }),
