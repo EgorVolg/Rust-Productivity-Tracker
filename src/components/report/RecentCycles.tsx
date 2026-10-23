@@ -1,4 +1,3 @@
-import { api } from "@/lib";
 import { cn } from "../../lib/cn";
 import { pad2, plural, truncate } from "../../lib/format";
 import type { Cycle } from "../../lib/types";
@@ -22,48 +21,37 @@ interface RecentCyclesProps {
   total: number;
   setShowAll: (v: boolean) => void;
   showAll: boolean;
-  loadJournal: () => Promise<void>;
-  /** строка с открытым меню — только для просмотра вёрстки */
-  menuOpenIndex?: number | null;
-  setOpenAddCycle: (v: boolean) => void;
-  showRowMenu: number | null;
-  setRowMenu: (v: number | null) => void;
-  setAddOrEdit: (v: "add" | "edit") => void;
+  /** открыть диалог в режиме «добавить» */
+  setOpenAddCycle: () => void;
+  /** id цикла с открытым меню — id, а не индекс */
+  showRowMenu: string | null;
+  setRowMenu: (v: string | null) => void;
   handleCopyCycle: (id: string) => void;
+  handleEditCycle: (cycle: Cycle) => void;
+  handleDeleteCycle: (id: string) => void;
 }
 
 /** §5.9: последние циклы; тема длиннее 20 символов обрезается */
 export function RecentCycles({
   cycles,
   total,
-  menuOpenIndex,
-  loadJournal,
   showAll,
   setShowAll,
   setOpenAddCycle,
   showRowMenu,
   setRowMenu,
-  setAddOrEdit,
   handleCopyCycle,
+  handleEditCycle,
+  handleDeleteCycle,
 }: RecentCyclesProps) {
   const cyclesData = showAll
     ? [...cycles].reverse()
     : [...cycles].slice(-5).reverse();
 
-  async function handleDeleteCycle(id: string) {
-    try {
-      await api.deleteCycle(id);
-      await loadJournal();
-      setRowMenu(null);
-    } catch (err) {
-      console.error("[RecentCycles] Не удалось удалить цикл:", err);
-    }
-  }
-
   return (
     <Card
       aria-labelledby="h-last"
-      className={cn("gap-3.5", menuOpenIndex !== null && "relative z-45")}
+      className={cn("gap-3.5", showRowMenu !== null && "relative z-45")}
     >
       <CardHeader
         id="h-last"
@@ -89,10 +77,7 @@ export function RecentCycles({
               size="sm"
               aria-haspopup="dialog"
               className="pl-2.5"
-              onClick={() => {
-                setAddOrEdit("add");
-                setOpenAddCycle(true);
-              }}
+              onClick={setOpenAddCycle}
             >
               <IconPlus className="size-4" />
               Добавить
@@ -122,7 +107,7 @@ export function RecentCycles({
         </div>
 
         {cyclesData.map((c, i) => {
-          const menuOpen = menuOpenIndex === i;
+          const menuOpen = showRowMenu === c.id;
           const opensUp = cyclesData.length - i <= 3;
 
           return (
@@ -154,23 +139,25 @@ export function RecentCycles({
               </span>
               <span role="cell" className="relative flex justify-end">
                 <IconButton
-                  onClick={() => setRowMenu(menuOpen ? null : i)}
+                  onClick={() => setRowMenu(menuOpen ? null : c.id)}
                   label={`Действия с циклом ${c.date}, ${c.topic}`}
                   aria-haspopup="menu"
                   aria-expanded={menuOpen}
-                  active={showRowMenu === i}
+                  active={menuOpen}
                 >
                   <IconDots className="size-4" />
                 </IconButton>
-                {showRowMenu === i && (
+                {menuOpen && (
                   <RowMenu
                     id={c.id}
-                    setOpenAddCycle={setOpenAddCycle}
-                    setAddOrEdit={() => setAddOrEdit("edit")}
+                    cycle={c}
                     placement={opensUp ? "up" : "down"}
                     onClose={() => setRowMenu(null)}
+                    setAddOrEdit={handleEditCycle}
+                    setOpenAddCycle={setOpenAddCycle}
                     onDeleteCycle={handleDeleteCycle}
                     onCopyCycle={handleCopyCycle}
+                    onEditCycle={() => handleEditCycle(c)}
                   />
                 )}
               </span>
