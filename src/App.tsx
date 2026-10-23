@@ -8,7 +8,6 @@ import {
   FilterBar,
   Heatmap,
   MorningBlock,
-  OpenFileDialog,
   RecentCycles,
   SummaryCards,
   Toast,
@@ -17,17 +16,12 @@ import {
 } from "./components";
 import { PreviewState } from "./lib/view";
 import * as demoData from "./data/demo";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useJournal } from "./lib";
 
-/**
- * Только для просмотра вёрстки: что показать открытым.
- * panel: 'category' | 'period' | 'top' | 'file' | 'errors' | 'open-file' | 'add-cycle' | null
- */
 const preview: PreviewState = {
   panel: null,
   empty: false,
-
   heatTooltip: null,
 };
 
@@ -72,21 +66,12 @@ export default function App() {
         <FilterBar
           filters={demoData.filters}
           counts={demoData.categoryCounts}
-          shown={preview.empty ? 0 : demoData.summary.cycles}
           total={journal.lineCount}
           presets={demoData.periodPresets}
           openPanel={preview.panel}
         />
 
         <main className="flex flex-col gap-6">
-          {/* <ReportHeader
-            fileName="journal.json"
-            period={
-              preview.empty ? "период данных: —" : `${journal.from} → ${journal.to}`
-            }
-            filtersText={`фильтры не применены · топ-${demoData.filters.top} слов`}
-          /> */}
-
           <SummaryCards
             journal={journal}
             summary={preview.empty ? null : demoData.summary}
@@ -133,13 +118,10 @@ export default function App() {
         </main>
       </div>
 
-      <OpenFileDialog
-        open={preview.panel === "open-file"}
-        onOpenChange={() => {}}
-      />
       <AddCycleDialog
         addOrEdit={addOrEdit}
         suggestions={demoData.topicSuggestions}
+        lastCycle={journal.cycles[journal.cycles.length - 1]}
         open={openAddCycle}
         onOpenChange={() => setOpenAddCycle(false)}
         onAdded={handleAddCycle}

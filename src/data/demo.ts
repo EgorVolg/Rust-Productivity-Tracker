@@ -99,7 +99,6 @@ export const cycleDraft: CycleDraft = {
   topic: 'Глава 10: обобщения',
   minutes: '50',
   energy: 4,
-  csvLine: '2026-10-20,2,8,rust,Глава 10: обобщения,50,4',
 };
 
 export const topicSuggestions = ['ToDo на Tauri: команды', 'Rustlings vecs', 'Глава 8: векторы', 'study-log: тепловая карта'];

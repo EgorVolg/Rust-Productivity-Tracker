@@ -15,7 +15,7 @@ import {
   ToggleChip,
   TopicInput,
 } from "../ui";
-import { api } from "@/lib";
+import { api, Cycle } from "@/lib";
 import { CycleDialogState } from "@/App";
 
 const MINUTE_PRESETS = [15, 25, 50, 90];
@@ -24,21 +24,11 @@ const morning = (h: number) => h >= 6 && h < 12;
 const day = (h: number) => h >= 12 && h < 18;
 const evening = (h: number) => h >= 18 && h < 24;
 
-const draftForm: CycleDraft = {
-  date: today(),
-  hour: new Date().getHours(),
-  category: "",
-  topic: "",
-  minutes: "50",
-  energy: 3,
-  mode: "add",
-  weekdayLabel: "",
-  csvLine: "",
-};
-
 interface AddCycleDialogProps {
   /** недавние темы выбранной категории */
   suggestions: string[];
+  /** последний цикл */
+  lastCycle: Cycle;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** вызывается после успешной записи, чтобы перечитать журнал */
@@ -61,6 +51,7 @@ export function AddCycleDialog({
   onOpenChange,
   onAdded,
   addOrEdit,
+  lastCycle,
 }: AddCycleDialogProps) {
   /** ошибки от Rust: поле → сообщение */
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -72,6 +63,17 @@ export function AddCycleDialog({
     setErrors({});
     setFormError(null);
     onOpenChange(false);
+  };
+
+  const draftForm: CycleDraft = {
+    date: today(),
+    hour: new Date().getHours(),
+    category: lastCycle.category,
+    topic: lastCycle.topic,
+    minutes: lastCycle.minutes.toString(),
+    energy: 5,
+    mode: "add",
+    weekdayLabel: new Date().toLocaleDateString("ru-RU", { weekday: "long" }),
   };
 
   /** меняет поле и убирает его ошибку */
@@ -148,11 +150,6 @@ export function AddCycleDialog({
     >
       <ModalHeader
         title={addOrEdit === "edit" ? "Изменить цикл" : "Новый цикл"}
-        subtitle={
-          addOrEdit === "edit"
-            ? "Строка в journal.csv будет перезаписана"
-            : "Запишется новой строкой в конец journal.csv"
-        }
       />
 
       <div className="grid grid-cols-2 gap-7">
@@ -343,13 +340,6 @@ export function AddCycleDialog({
             )}
           </div>
         </div>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <span className="text-xs font-medium text-muted">Строка в файле</span>
-        <code className="block overflow-hidden rounded-xl border border-white/8 bg-well/50 px-3.5 py-3 font-mono text-[13px] text-ellipsis whitespace-nowrap text-lilac">
-          {formState.csvLine}
-        </code>
       </div>
 
       <div className="flex items-center justify-between gap-4">

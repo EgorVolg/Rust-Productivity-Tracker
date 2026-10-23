@@ -1,6 +1,6 @@
-import { api, Journal, useJournal } from "@/lib";
+import { api } from "@/lib";
 import { cn } from "../../lib/cn";
-import { pad2, truncate } from "../../lib/format";
+import { pad2, plural, truncate } from "../../lib/format";
 import type { Cycle } from "../../lib/types";
 import { RowMenu } from "../overlays";
 import {
@@ -66,7 +66,7 @@ export function RecentCycles({
         title={
           showAll
             ? `Все циклы · ${total}`
-            : `Последние ${cyclesData.length} циклов`
+            : `Последние ${total} ${plural(total, "цикл", "цикла", "циклов")}`
         }
         actions={
           <div className="flex items-center gap-2.5">
@@ -119,7 +119,8 @@ export function RecentCycles({
 
         {cyclesData.map((c, i) => {
           const menuOpen = menuOpenIndex === i;
-          const opensUp = cycles.length < 5;
+          const opensUp = cyclesData.length - i <= 3;
+
           return (
             <div
               key={c.id}

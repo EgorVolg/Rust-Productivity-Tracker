@@ -61,7 +61,7 @@ export function ModalHeader({
   subtitle,
 }: {
   title: string;
-  subtitle: string;
+  subtitle?: string;
 }) {
   return (
     <div className="flex items-start justify-between gap-4">

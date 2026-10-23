@@ -52,8 +52,7 @@ export interface CycleDraft {
   category: string;
   topic: string;
   minutes: string;
-  energy: number;
-  csvLine: string;
+  energy: number; 
   note?: string;
   errors?: { date?: string; topic?: string; minutes?: string };
 }
