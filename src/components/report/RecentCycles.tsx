@@ -119,7 +119,7 @@ export function RecentCycles({
 
         {cyclesData.map((c, i) => {
           const menuOpen = menuOpenIndex === i;
-          const opensUp = cycles.length > 2 && i >= cycles.length - 2;
+          const opensUp = cycles.length < 5;
           return (
             <div
               key={c.id}

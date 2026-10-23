@@ -37,7 +37,7 @@ export default function App() {
   const [openAddCycle, setOpenAddCycle] = useState(false);
   const { journal, loading, error, loadJournal } = useJournal();
   const [showAllCycles, setShowAllCycles] = useState(false);
-  const [showRowMenu, setRowMenu] = useState<null>(null);
+  const [showRowMenu, setRowMenu] = useState<null | number>(null);
   const [showToast, setShowToast] = useState(false);
   const [addOrEdit, setAddOrEdit] = useState<CycleDialogState>("add");
 
