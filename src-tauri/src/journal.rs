@@ -6,12 +6,13 @@ use std::{
     path::{Path, PathBuf},
 };
 use tauri::Manager;
+use uuid::Uuid;
 
 use crate::cycle::CycleInput;
 
 #[derive(Debug, Serialize)]
 pub struct Cycle {
-    pub id: String,
+    pub id: Uuid,
     pub date: String,
     pub weekday: u8,
     pub hour: u8,
@@ -47,6 +48,46 @@ fn today() -> NaiveDate {
     Local::now().date_naive()
 }
 
+const HEADER: &str = "id,date,weekday,hour,category,topic,minutes,energy";
+
+fn ensure_migrated(path: &Path) -> Result<(), String> {
+    let content = match std::fs::read_to_string(path) {
+        Ok(c) => c,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(()),
+        Err(e) => return Err(format!("Не удалось прочитать файл: {e}")),
+    };
+
+    let mut lines = content.lines();
+    let header = match lines.next() {
+        Some(h) if !h.trim().is_empty() => h.trim(),
+        _ => return Ok(()), // пустой файл
+    };
+
+    if header == HEADER {
+        return Ok(());
+    }
+
+    // Старый формат без id — дописываем UUID каждой непустой строке.
+    let mut out = String::with_capacity(content.len() + 64);
+    out.push_str(HEADER);
+    out.push('\n');
+
+    for line in lines {
+        if line.trim().is_empty() {
+            out.push('\n');
+            continue;
+        }
+        out.push_str(&Uuid::new_v4().to_string());
+        out.push(',');
+        out.push_str(line);
+        out.push('\n');
+    }
+
+    std::fs::write(path, out).map_err(|e| format!("Не удалось мигрировать файл: {e}"))?;
+    println!("[journal] миграция: добавлена колонка id");
+    Ok(())
+}
+
 /// Путь к journal.csv в папке данных приложения; папку создаёт, если её нет.
 pub fn journal_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     let dir = app
@@ -60,6 +101,8 @@ pub fn journal_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
 
 /// Дописывает цикл строкой в конец файла; в пустой файл сначала пишет заголовок.
 pub fn write_to_journal(path: &Path, cycle_form: &CycleInput) -> Result<(), String> {
+    ensure_migrated(path)?;
+
     let mut file = std::fs::OpenOptions::new()
         .create(true)
         .append(true)
@@ -72,16 +115,17 @@ pub fn write_to_journal(path: &Path, cycle_form: &CycleInput) -> Result<(), Stri
         .len()
         == 0;
     if is_empty {
-        writeln!(file, "date,weekday,hour,category,topic,minutes,energy")
-            .map_err(|e| format!("Не удалось записать заголовок: {e}"))?;
+        writeln!(file, "{HEADER}").map_err(|e| format!("Не удалось записать заголовок: {e}"))?;
     }
 
     let date = NaiveDate::parse_from_str(&cycle_form.date, "%Y-%m-%d")
         .map_err(|e| format!("Не удалось разобрать дату: {e}"))?;
+    let id = Uuid::new_v4();
 
     writeln!(
         file,
-        "{},{},{},{},{},{},{}",
+        "{},{},{},{},{},{},{},{}",
+        id,
         date.format("%Y-%m-%d"),
         date.weekday().number_from_monday(),
         cycle_form.hour,
@@ -91,17 +135,6 @@ pub fn write_to_journal(path: &Path, cycle_form: &CycleInput) -> Result<(), Stri
         cycle_form.energy
     )
     .map_err(|e| format!("Не удалось записать цикл: {e}"))?;
-
-    println!(
-        "[journal] дописана строка: {},{},{},{},{},{},{}",
-        date.format("%Y-%m-%d"),
-        date.weekday().number_from_monday(),
-        cycle_form.hour,
-        cycle_form.category.trim().to_lowercase(),
-        cycle_form.topic.trim(),
-        cycle_form.minutes,
-        cycle_form.energy
-    );
 
     Ok(())
 }
@@ -114,27 +147,32 @@ fn read_journal_file(path: &Path) -> Result<String, String> {
     }
 }
 
-fn parse_line(line: &str, line_no: usize) -> Result<Cycle, String> {
+fn parse_line(line: &str, _line_no: usize) -> Result<Cycle, String> {
     let parts: Vec<&str> = line.split(',').map(str::trim).collect();
-    if parts.len() != 7 {
-        return Err(format!("ожидалось 7 полей, найдено {}", parts.len()));
+    if parts.len() != 8 {
+        return Err(format!("ожидалось 8 полей, найдено {}", parts.len()));
     }
 
-    let hour: u8 = parts[2]
+    let id = parts[0];
+    if id.is_empty() {
+        return Err("пустой id".to_string());
+    }
+
+    let hour: u8 = parts[3]
         .parse()
-        .map_err(|_| format!("«час» — не число: {}", parts[2]))?;
-    let minutes: u16 = parts[5]
+        .map_err(|_| format!("«час» — не число: {}", parts[3]))?;
+    let minutes: u16 = parts[6]
         .parse()
-        .map_err(|_| format!("«минуты» — не число: {}", parts[5]))?;
-    let energy: u8 = parts[6]
+        .map_err(|_| format!("«минуты» — не число: {}", parts[6]))?;
+    let energy: u8 = parts[7]
         .parse()
-        .map_err(|_| format!("«энергия» — не число: {}", parts[6]))?;
+        .map_err(|_| format!("«энергия» — не число: {}", parts[7]))?;
 
     let input = CycleInput {
-        date: parts[0].to_string(),
+        date: parts[1].to_string(),
         hour,
-        category: parts[3].to_string(),
-        topic: parts[4].to_string(),
+        category: parts[4].to_string(),
+        topic: parts[5].to_string(),
         minutes,
         energy,
     };
@@ -151,7 +189,7 @@ fn parse_line(line: &str, line_no: usize) -> Result<Cycle, String> {
         .map_err(|e| format!("Не удалось разобрать дату: {e}"))?;
 
     Ok(Cycle {
-        id: format!("line-{line_no}"),
+        id: Uuid::parse_str(id).map_err(|e| format!("Не удалось разобрать id: {e}"))?,
         date: date.format("%Y-%m-%d").to_string(),
         weekday: date.weekday().number_from_monday() as u8,
         hour: input.hour,
@@ -185,34 +223,32 @@ fn day_status(date: NaiveDate, today: NaiveDate, agg: &HashMap<NaiveDate, u32>) 
     }
 }
 
-fn compute_streak(cycles: &[Cycle], today: NaiveDate) -> u16 {
-    let agg = aggregate_minutes(cycles);
+fn compute_streak_from_agg(agg: &HashMap<NaiveDate, u32>, today: NaiveDate) -> u16 {
     if agg.is_empty() {
         return 0;
     }
-
     let min_date = match agg.keys().copied().min() {
-        Some(earliest) => earliest.min(today),
+        Some(e) => e.min(today),
         None => return 0,
     };
-
     let mut cursor = today;
     let mut acc: u16 = 0;
-
     while cursor >= min_date {
-        match day_status(cursor, today, &agg) {
+        match day_status(cursor, today, agg) {
             DayStatus::Qualified => acc = acc.saturating_add(1),
             DayStatus::Pending => {}
             DayStatus::Broken => break,
         }
-
         match cursor.pred_opt() {
-            Some(prev) => cursor = prev,
+            Some(p) => cursor = p,
             None => break,
         }
     }
-
     acc
+}
+
+fn compute_streak(cycles: &[Cycle], today: NaiveDate) -> u16 {
+    compute_streak_from_agg(&aggregate_minutes(cycles), today)
 }
 
 fn parse_journal(content: &str) -> ParseResult {
@@ -252,8 +288,75 @@ fn parse_journal(content: &str) -> ParseResult {
 }
 
 pub fn load_journal(path: &Path) -> Result<ParseResult, String> {
+    ensure_migrated(path)?;
     let content = read_journal_file(path)?;
     let mut result = parse_journal(&content);
     result.streak_days = compute_streak(&result.cycles, today());
     Ok(result)
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DeleteResult {
+    pub removed_id: Uuid,
+    pub streak_days: u16,
+}
+
+pub fn delete_cycle(path: &Path, id: String) -> Result<DeleteResult, String> {
+    // парсим id один раз до любого I/O — при невалидном id сразу выходим
+    let removed_id = Uuid::parse_str(&id).map_err(|e| format!("Неверный формат ID: {e}"))?;
+
+    ensure_migrated(path)?;
+    let content = read_journal_file(path)?;
+
+    let mut out = String::with_capacity(content.len());
+    let mut agg: HashMap<NaiveDate, u32> = HashMap::new();
+    let mut removed = false;
+    let mut first = true;
+
+    for line in content.lines() {
+        // заголовок сохраняем как есть
+        if first {
+            first = false;
+            out.push_str(line);
+            out.push('\n');
+            continue;
+        }
+        if line.trim().is_empty() {
+            out.push('\n');
+            continue;
+        }
+
+        let parts: Vec<&str> = line.split(',').map(str::trim).collect();
+        if parts.first().copied() == Some(id.as_str()) {
+            removed = true;
+            continue; // строку выкидываем
+        }
+
+        out.push_str(line);
+        out.push('\n');
+
+        // лёгкий агрегат для streak: date + minutes, без validate
+        if let (Some(d), Some(m)) = (parts.get(1), parts.get(6)) {
+            if let (Ok(date), Ok(min)) =
+                (NaiveDate::parse_from_str(d, "%Y-%m-%d"), m.parse::<u32>())
+            {
+                *agg.entry(date).or_insert(0) += min;
+            }
+        }
+    }
+
+    if !removed {
+        return Err(format!("Цикл с id {id} не найден"));
+    }
+
+    std::fs::write(path, out).map_err(|e| format!("Не удалось записать файл: {e}"))?;
+
+    let streak_days = compute_streak_from_agg(&agg, today());
+    println!("[journal] удалён цикл id={removed_id}, streak={streak_days}");
+
+    Ok(DeleteResult {
+        removed_id,
+        streak_days,
+    })
 }

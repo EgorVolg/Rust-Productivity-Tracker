@@ -1,10 +1,10 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { Category, ParseResult } from "./types";
+import type { ParseResult } from "./types";
 
 export interface CycleInput {
   date: string;
   hour: number;
-  category: Category;
+  category: string;
   topic: string;
   minutes: number;
   energy: number;
@@ -19,6 +19,6 @@ export interface Journal {
 export const api = {
   addCycle: (cycleForm: CycleInput) =>
     invoke<string>("add_cycle", { cycleForm }),
-
   loadJournal: () => invoke<ParseResult>("load_journal"),
+  deleteCycle: (id: string) => invoke<void>("delete_cycle", { id }),
 };

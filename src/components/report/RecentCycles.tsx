@@ -1,3 +1,4 @@
+import { api, Journal, useJournal } from "@/lib";
 import { cn } from "../../lib/cn";
 import { pad2, truncate } from "../../lib/format";
 import type { Cycle } from "../../lib/types";
@@ -21,6 +22,7 @@ interface RecentCyclesProps {
   total: number;
   setShowAll: (v: boolean) => void;
   showAll: boolean;
+  loadJournal: () => Promise<void>;
   /** строка с открытым меню — только для просмотра вёрстки */
   menuOpenIndex?: number | null;
   setOpenAddCycle: (v: boolean) => void;
@@ -34,6 +36,7 @@ export function RecentCycles({
   cycles,
   total,
   menuOpenIndex,
+  loadJournal,
   showAll,
   setShowAll,
   setOpenAddCycle,
@@ -41,7 +44,17 @@ export function RecentCycles({
   setRowMenu,
   setAddOrEdit,
 }: RecentCyclesProps) {
-  const cyclesData = showAll ? cycles : cycles.slice(-5).reverse();
+  const cyclesData = showAll ? cycles.reverse() : cycles.reverse().slice(-5);
+
+  async function handleDeleteCycle(id: string) {
+    try {
+      await api.deleteCycle(id);
+      await loadJournal();
+      setRowMenu(null);
+    } catch (err) {
+      console.error("[RecentCycles] Не удалось удалить цикл:", err);
+    }
+  }
 
   return (
     <Card
@@ -146,10 +159,12 @@ export function RecentCycles({
                 </IconButton>
                 {showRowMenu === i && (
                   <RowMenu
+                    id={c.id}
                     setOpenAddCycle={setOpenAddCycle}
                     setAddOrEdit={() => setAddOrEdit("edit")}
                     placement={opensUp ? "up" : "down"}
                     onClose={() => setRowMenu(null)}
+                    onDeleteCycle={handleDeleteCycle}
                   />
                 )}
               </span>

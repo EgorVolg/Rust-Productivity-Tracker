@@ -37,7 +37,7 @@ export default function App() {
   const [openAddCycle, setOpenAddCycle] = useState(false);
   const { journal, loading, error, loadJournal } = useJournal();
   const [showAllCycles, setShowAllCycles] = useState(false);
-  const [showRowMenu, setRowMenu] = useState<number | null>(null);
+  const [showRowMenu, setRowMenu] = useState<null>(null);
   const [showToast, setShowToast] = useState(false);
   const [addOrEdit, setAddOrEdit] = useState<CycleDialogState>("add");
 
@@ -50,17 +50,11 @@ export default function App() {
     loadJournal();
   }
 
-  useEffect(() => {
-    if (journal) {
-      console.log("[App] Список обновлён с сервера:", journal);
-    }
-  }, [journal]);
-
-  if (loading) {
+  if (loading && !journal) {
     return <div>Загрузка...</div>;
   }
 
-  if (error) {
+  if (error && !journal) {
     return <div>Ошибка: {error}</div>;
   }
 
@@ -132,6 +126,7 @@ export default function App() {
                 showRowMenu={showRowMenu}
                 setRowMenu={setRowMenu}
                 setAddOrEdit={setAddOrEdit}
+                loadJournal={loadJournal}
               />
             </>
           )}

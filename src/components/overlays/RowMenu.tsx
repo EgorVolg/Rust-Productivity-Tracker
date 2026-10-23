@@ -5,15 +5,19 @@ import { IconCopy, IconPencil, IconTrash } from "../ui";
 import { CycleDialogState } from "@/App";
 
 export function RowMenu({
+  id,
   placement = "down",
   onClose,
   setAddOrEdit,
   setOpenAddCycle,
+  onDeleteCycle,
 }: {
+  id: string;
   placement?: "down" | "up";
   onClose: () => void;
   setAddOrEdit: (value: CycleDialogState) => void;
   setOpenAddCycle: (value: boolean) => void;
+  onDeleteCycle: (id: string) => void;
 }) {
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -47,13 +51,14 @@ export function RowMenu({
       >
         Изменить
       </MenuItem>
-      <MenuItem icon={<IconCopy className="size-4 text-soft" />}>
+      <MenuItem onClick={() => {}} icon={<IconCopy className="size-4 text-soft" />}>
         Повторить сегодня
       </MenuItem>
       <div role="separator" className="mx-1.5 my-1 h-px bg-white/8" />
       <MenuItem
         danger
         icon={<IconTrash className="size-4 text-danger-strong" />}
+        onClick={() => onDeleteCycle(id)}
       >
         Удалить
       </MenuItem>
@@ -70,7 +75,7 @@ function MenuItem({
   icon: ReactNode;
   danger?: boolean;
   children: ReactNode;
-  onClick?: () => void;
+  onClick: () => void;
 }) {
   return (
     <button

@@ -28,6 +28,14 @@ pub fn add_cycle(
 #[tauri::command]
 pub fn load_journal(app: tauri::AppHandle) -> Result<ParseResult, String> {
     let path = journal_path(&app).map_err(|e| e.to_string())?;
+
     let result = crate::journal::load_journal(&path)?;
     Ok(result)
+}
+
+#[tauri::command]
+pub fn delete_cycle(app: tauri::AppHandle, id: String) -> Result<(), String> {
+    let path = journal_path(&app).map_err(|e| e.to_string())?;
+    crate::journal::delete_cycle(&path, id)?;
+    Ok(())
 }
