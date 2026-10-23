@@ -1,6 +1,5 @@
-export type Category = 'rust' | 'english' | 'other' | 'work' | 'health' | 'family' | 'hobby' | 'leisure' | 'other';
 
-export const CATEGORIES: readonly Category[] = ['rust', 'english', 'other', 'work', 'health', 'family', 'hobby', 'leisure', 'other'];
+export const CATEGORIES: readonly string[] = ['rust', 'english', 'other', 'work', 'health', 'family', 'hobby', 'leisure', 'other'];
 
 /** Один цикл — одна строка CSV (§2.2). */
 export interface Cycle {
@@ -12,7 +11,7 @@ export interface Cycle {
   weekday: number;
   /** 0–23 */
   hour: number;
-  category: Category;
+  category: string;
   topic: string;
   /** 1–600 */
   minutes: number;
@@ -31,14 +30,16 @@ export interface ParseResult {
   errors: ParseError[];
   /** Сколько строк было в файле, включая комментарии и пустые. */
   lineCount: number;
+  /** Количество дней подряд с активностью. */
+  streakDays: number;
 }
 
-export interface Journal extends ParseResult {
-  fileName: string;
-}
+// export interface Journal extends ParseResult {
+//   fileName: string;
+// }
 
 export interface Filters {
-  category: Category | 'all';
+  category: string | 'all';
   /** ГГГГ-ММ-ДД или пустая строка — без границы */
   from: string;
   to: string;

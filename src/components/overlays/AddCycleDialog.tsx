@@ -16,6 +16,7 @@ import {
   TopicInput,
 } from "../ui";
 import { api } from "@/lib";
+import { CycleDialogState } from "@/App";
 
 const MINUTE_PRESETS = [15, 25, 50, 90];
 const ENERGY = [1, 2, 3, 4, 5];
@@ -23,32 +24,51 @@ const morning = (h: number) => h >= 6 && h < 12;
 const day = (h: number) => h >= 12 && h < 18;
 const evening = (h: number) => h >= 18 && h < 24;
 
+const draftForm: CycleDraft = {
+  date: today(),
+  hour: new Date().getHours(),
+  category: "",
+  topic: "",
+  minutes: "50",
+  energy: 3,
+  mode: "add",
+  weekdayLabel: "",
+  csvLine: "",
+};
+
 interface AddCycleDialogProps {
-  draft: CycleDraft;
   /** недавние темы выбранной категории */
   suggestions: string[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** вызывается после успешной записи, чтобы перечитать журнал */
-  onAdded?: () => void;
+  onAdded: (open: boolean) => void;
+  /** новая или редактируемая запись */
+  addOrEdit: CycleDialogState;
+}
+
+function today() {
+  const d = new Date();
+  const year = d.getFullYear();
+  const month = pad2(d.getMonth() + 1);
+  const day = pad2(d.getDate());
+  return `${year}-${month}-${day}`;
 }
 
 export function AddCycleDialog({
-  draft,
   suggestions,
   open,
   onOpenChange,
   onAdded,
+  addOrEdit,
 }: AddCycleDialogProps) {
-  const isEdit = draft.mode === "edit";
   /** ошибки от Rust: поле → сообщение */
   const [errors, setErrors] = useState<Record<string, string>>({});
   /** ошибка не по полю (например, Tauri не разобрал запрос) */
   const [formError, setFormError] = useState<string | null>(null);
 
-  /** закрытие любым способом (Отмена, крестик, Esc, подложка, успешная отправка) сбрасывает форму и ошибки */
   const handleCancel = () => {
-    setFormState(draft);
+    setFormState(draftForm);
     setErrors({});
     setFormError(null);
     onOpenChange(false);
@@ -70,16 +90,9 @@ export function AddCycleDialog({
     const { date, hour, category, topic, minutes, energy } = formState;
     setErrors({});
     setFormError(null);
-    console.log("[AddCycleDialog] отправка формы:", {
-      date,
-      hour,
-      category,
-      topic,
-      minutes,
-      energy,
-    });
+
     try {
-      const result = await api.addCycle({
+      await api.addCycle({
         date,
         hour,
         category,
@@ -87,10 +100,9 @@ export function AddCycleDialog({
         minutes: Number(minutes),
         energy,
       });
-      console.log("[AddCycleDialog] цикл добавлен:", result);
-      handleCancel();
+
       // журнал перечитываем после записи: иначе счётчик циклов в UI устареет
-      onAdded?.();
+      onAdded(false);
     } catch (e) {
       console.error("[AddCycleDialog] ошибка добавления:", e);
       // Err(HashMap) из Rust приходит объектом, прочие ошибки Tauri — строкой
@@ -105,7 +117,7 @@ export function AddCycleDialog({
     }
   }
 
-  const [formState, setFormState] = useState<CycleDraft>(draft);
+  const [formState, setFormState] = useState<CycleDraft>(draftForm);
   // подсветка — блок текущего времени суток, а не выбранного часа
   const nowHour = new Date().getHours();
   const blockLabel = morning(nowHour)
@@ -118,14 +130,6 @@ export function AddCycleDialog({
   // блоки по 6 часов: 00–05, 06–11, 12–17, 18–23
   const blockHourStart = Math.floor(nowHour / 6) * 6;
   const blockHourEnd = blockHourStart + 5;
-
-  function today() {
-    const d = new Date();
-    const year = d.getFullYear();
-    const month = pad2(d.getMonth() + 1);
-    const day = pad2(d.getDate());
-    return `${year}-${month}-${day}`;
-  }
 
   function yesterday() {
     const d = new Date();
@@ -143,9 +147,9 @@ export function AddCycleDialog({
       className="w-205 gap-5.5"
     >
       <ModalHeader
-        title={isEdit ? "Изменить цикл" : "Новый цикл"}
+        title={addOrEdit === "edit" ? "Изменить цикл" : "Новый цикл"}
         subtitle={
-          isEdit
+          addOrEdit === "edit"
             ? "Строка в journal.csv будет перезаписана"
             : "Запишется новой строкой в конец journal.csv"
         }
@@ -362,7 +366,7 @@ export function AddCycleDialog({
           <Button onClick={handleCancel}>Отмена</Button>
           <Button variant="primary" onClick={handleSubmit}>
             <IconCheck className="size-4" />
-            {isEdit ? "Сохранить" : "Добавить"}
+            {addOrEdit === "edit" ? "Сохранить" : "Добавить"}
           </Button>
         </div>
       </div>
