@@ -1,9 +1,7 @@
 
 export const CATEGORIES: readonly string[] = ['rust', 'english', 'other', 'work', 'health', 'family', 'hobby', 'leisure', 'other'];
 
-/** Один цикл — одна строка CSV (§2.2). */
 export interface Cycle {
-  /** Служебный id для React и правок; в файл не пишется. */
   id: string;
   /** ГГГГ-ММ-ДД */
   date: string;

@@ -21,4 +21,6 @@ export const api = {
     invoke<string>("add_cycle", { cycleForm }),
   loadJournal: () => invoke<ParseResult>("load_journal"),
   deleteCycle: (id: string) => invoke<void>("delete_cycle", { id }),
+  editCycle: (id: string, cycleForm: CycleInput) =>
+    invoke<void>("edit_cycle", { id, cycleForm }),
 };
