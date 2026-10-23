@@ -1,8 +1,7 @@
-//! Файл журнала journal.csv: где лежит и как в него пишем.
-
-use chrono::{Datelike, NaiveDate};
+use chrono::{Datelike, Local, NaiveDate};
 use serde::Serialize;
 use std::{
+    collections::HashMap,
     io::Write,
     path::{Path, PathBuf},
 };
@@ -34,6 +33,18 @@ pub struct ParseResult {
     pub cycles: Vec<Cycle>,
     pub errors: Vec<ParseError>,
     pub line_count: usize,
+    pub streak_days: u16,
+}
+
+#[derive(Debug, Clone, Copy)]
+enum DayStatus {
+    Qualified,
+    Pending,
+    Broken,
+}
+
+fn today() -> NaiveDate {
+    Local::now().date_naive()
 }
 
 /// Путь к journal.csv в папке данных приложения; папку создаёт, если её нет.
@@ -55,7 +66,6 @@ pub fn write_to_journal(path: &Path, cycle_form: &CycleInput) -> Result<(), Stri
         .open(path)
         .map_err(|e| format!("Не удалось открыть файл: {e}"))?;
 
-    // пустой файл (новый или созданный вручную) — сначала заголовок
     let is_empty = file
         .metadata()
         .map_err(|e| format!("Не удалось прочитать файл: {e}"))?
@@ -66,15 +76,14 @@ pub fn write_to_journal(path: &Path, cycle_form: &CycleInput) -> Result<(), Stri
             .map_err(|e| format!("Не удалось записать заголовок: {e}"))?;
     }
 
-    // validate уже проверил дату, но без unwrap: паника уронила бы приложение
     let date = NaiveDate::parse_from_str(&cycle_form.date, "%Y-%m-%d")
         .map_err(|e| format!("Не удалось разобрать дату: {e}"))?;
 
     writeln!(
         file,
         "{},{},{},{},{},{},{}",
-        date.format("%Y-%m-%d"),             // всегда с ведущими нулями
-        date.weekday().number_from_monday(), // 1 = понедельник … 7 = воскресенье
+        date.format("%Y-%m-%d"),
+        date.weekday().number_from_monday(),
         cycle_form.hour,
         cycle_form.category.trim().to_lowercase(),
         cycle_form.topic.trim(),
@@ -130,7 +139,6 @@ fn parse_line(line: &str, line_no: usize) -> Result<Cycle, String> {
         energy,
     };
 
-    // те же правила, что при записи с формы
     input.validate().map_err(|errors| {
         errors
             .into_iter()
@@ -154,20 +162,82 @@ fn parse_line(line: &str, line_no: usize) -> Result<Cycle, String> {
     })
 }
 
+const PERFECT_DAY_MINUTES: u32 = 240;
+
+fn aggregate_minutes(cycles: &[Cycle]) -> HashMap<NaiveDate, u32> {
+    let mut agg: HashMap<NaiveDate, u32> = HashMap::new();
+    for cycle in cycles {
+        if let Ok(date) = NaiveDate::parse_from_str(&cycle.date, "%Y-%m-%d") {
+            *agg.entry(date).or_insert(0) += u32::from(cycle.minutes);
+        }
+    }
+    agg
+}
+
+fn day_status(date: NaiveDate, today: NaiveDate, agg: &HashMap<NaiveDate, u32>) -> DayStatus {
+    let minutes = agg.get(&date).copied().unwrap_or(0);
+    if minutes >= PERFECT_DAY_MINUTES {
+        DayStatus::Qualified
+    } else if date == today {
+        DayStatus::Pending
+    } else {
+        DayStatus::Broken
+    }
+}
+
+fn compute_streak(cycles: &[Cycle], today: NaiveDate) -> u16 {
+    let agg = aggregate_minutes(cycles);
+    if agg.is_empty() {
+        return 0;
+    }
+
+    let min_date = match agg.keys().copied().min() {
+        Some(earliest) => earliest.min(today),
+        None => return 0,
+    };
+
+    let mut cursor = today;
+    let mut acc: u16 = 0;
+
+    while cursor >= min_date {
+        match day_status(cursor, today, &agg) {
+            DayStatus::Qualified => acc = acc.saturating_add(1),
+            DayStatus::Pending => {}
+            DayStatus::Broken => break,
+        }
+
+        match cursor.pred_opt() {
+            Some(prev) => cursor = prev,
+            None => break,
+        }
+    }
+
+    acc
+}
+
 fn parse_journal(content: &str) -> ParseResult {
     let mut cycles = Vec::new();
     let mut errors = Vec::new();
-    let line_count = content.lines().count();
+    let mut line_count = 0;
+    let mut logical_line_no = 0;
 
-    for (index, line) in content.lines().enumerate().skip(1) {
+    for line in content.lines() {
         if line.trim().is_empty() {
             continue;
         }
-        let line_no = index + 1;
-        match parse_line(line, line_no) {
+
+        logical_line_no += 1;
+
+        if logical_line_no == 1 {
+            continue;
+        }
+
+        line_count += 1;
+
+        match parse_line(line, logical_line_no) {
             Ok(cycle) => cycles.push(cycle),
             Err(message) => errors.push(ParseError {
-                line: line_no,
+                line: logical_line_no,
                 message,
             }),
         }
@@ -177,10 +247,13 @@ fn parse_journal(content: &str) -> ParseResult {
         cycles,
         errors,
         line_count,
+        streak_days: 0,
     }
 }
 
 pub fn load_journal(path: &Path) -> Result<ParseResult, String> {
     let content = read_journal_file(path)?;
-    Ok(parse_journal(&content))
+    let mut result = parse_journal(&content);
+    result.streak_days = compute_streak(&result.cycles, today());
+    Ok(result)
 }

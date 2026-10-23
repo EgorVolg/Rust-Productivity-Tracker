@@ -20,14 +20,6 @@ export function SummaryCards({
     0,
   );
 
-  let daysInWork = 0;
-  for (const days of journal.cycles) {
-    if (days.minutes <= 240) {
-      daysInWork = 0;
-    }
-    daysInWork++;
-  }
-
   return (
     <section aria-label="Сводка" className="grid grid-cols-4 gap-5">
       <Stat
@@ -44,14 +36,18 @@ export function SummaryCards({
       />
       <Stat
         label="Дней в ударе &#128293;"
-        value={daysInWork + " " + plural(daysInWork, "день", "дня", "дней")}
+        value={
+          journal.streakDays +
+          " " +
+          plural(journal.streakDays, "день", "дня", "дней")
+        }
         caption="без остановки!"
         empty={empty}
       />
       <Stat
         label="Среднее в рабочий день"
-        value={<Duration minutes={totalTime / daysInWork} />}
-        caption={`${(totalTime / daysInWork).toFixed(1)} мин`}
+        value={<Duration minutes={totalTime / journal.streakDays} />}
+        caption={`${(totalTime / journal.streakDays).toFixed(1)} мин`}
         empty={empty}
       />
     </section>
