@@ -16,7 +16,6 @@ import {
   TopicInput,
 } from "../ui";
 import { api, CycleInput } from "@/lib";
-import { CycleDialogState } from "@/App";
 
 const MINUTE_PRESETS = [15, 25, 50, 90];
 const ENERGY = [1, 2, 3, 4, 5];
@@ -27,22 +26,28 @@ const evening = (h: number) => h >= 18 && h < 24;
 interface AddCycleDialogProps {
   /** недавние темы выбранной категории */
   suggestions: string[];
-  /** данные для формы */
+  /** данные для формы — префилл задаёт useCycleManager */
   formData: CycleInput;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** вызывается после успешной записи, чтобы перечитать журнал */
-  onAdded: (open: boolean) => void;
+  onAdded: () => void;
   /** новая или редактируемая запись */
-  addOrEdit: CycleDialogState;
+  addOrEdit: "add" | "edit";
+  /** ID редактируемого цикла */
+  editingCycleId: string | null;
+}
+
+function toDateInputValue(d: Date): string {
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 }
 
 function today() {
-  const d = new Date();
-  const year = d.getFullYear();
-  const month = pad2(d.getMonth() + 1);
-  const day = pad2(d.getDate());
-  return `${year}-${month}-${day}`;
+  return toDateInputValue(new Date());
+}
+
+function formatWeekday(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString("ru-RU", { weekday: "long" });
 }
 
 export function AddCycleDialog({
@@ -52,33 +57,35 @@ export function AddCycleDialog({
   onAdded,
   addOrEdit,
   formData,
+  editingCycleId,
 }: AddCycleDialogProps) {
   /** ошибки от Rust: поле → сообщение */
   const [errors, setErrors] = useState<Record<string, string>>({});
   /** ошибка не по полю (например, Tauri не разобрал запрос) */
   const [formError, setFormError] = useState<string | null>(null);
 
-  const handleCancel = () => {
-    setFormState(draftForm);
-    setErrors({});
-    setFormError(null);
-    onOpenChange(false);
-  };
-
-  const draftForm: CycleDraft = {
-    date: today(),
-    hour: new Date().getHours(),
+  // Lazy init — диалог монтируется заново на каждое открытие (key={version} в App),
+  // поэтому стартовые значения берутся из актуального formData: дата, час, энергия
+  // в режиме edit — из цикла, в режиме add — из «последнего цикла + сейчас».
+  const [formState, setFormState] = useState<CycleDraft>(() => ({
+    date: formData.date,
+    hour: formData.hour,
     category: formData.category,
     topic: formData.topic,
     minutes: formData.minutes.toString(),
-    energy: 5,
-    mode: "add",
-    weekdayLabel: new Date().toLocaleDateString("ru-RU", { weekday: "long" }),
-  };
+    energy: formData.energy,
+    mode: addOrEdit,
+    weekdayLabel: formatWeekday(formData.date),
+  }));
 
-  /** меняет поле и убирает его ошибку */
   function setField<K extends keyof CycleDraft>(key: K, value: CycleDraft[K]) {
-    setFormState((s) => ({ ...s, [key]: value }));
+    setFormState((s) => {
+      const next: CycleDraft = { ...s, [key]: value };
+      if (key === "date") {
+        next.weekdayLabel = formatWeekday(String(value));
+      }
+      return next;
+    });
     setErrors((prev) => {
       if (!(key in prev)) return prev;
       const next = { ...prev };
@@ -88,28 +95,38 @@ export function AddCycleDialog({
     setFormError(null);
   }
 
+  function handleCancel() {
+    setErrors({});
+    setFormError(null);
+    onOpenChange(false);
+  }
+
   async function handleSubmit() {
     const { date, hour, category, topic, minutes, energy } = formState;
     setErrors({});
     setFormError(null);
 
-    try {
-      await api.addCycle({
-        date,
-        hour,
-        category,
-        topic,
-        minutes: Number(minutes),
-        energy,
-      });
+    const payload: CycleInput = {
+      date,
+      hour,
+      category,
+      topic,
+      minutes: Number(minutes),
+      energy,
+    };
 
+    try {
+      if (addOrEdit === "edit" && editingCycleId) {
+        await api.editCycle(editingCycleId, payload);
+      } else {
+        await api.addCycle(payload);
+      }
       // журнал перечитываем после записи: иначе счётчик циклов в UI устареет
-      onAdded(false);
+      onAdded();
     } catch (e) {
-      console.error("[AddCycleDialog] ошибка добавления:", e);
+      console.error("[AddCycleDialog] ошибка сохранения:", e);
       // Err(HashMap) из Rust приходит объектом, прочие ошибки Tauri — строкой
       if (e && typeof e === "object") {
-        // "_form" — ошибка не по полю (например, файловая), её показываем внизу
         const { _form, ...fieldErrors } = e as Record<string, string>;
         setErrors(fieldErrors);
         if (_form) setFormError(_form);
@@ -119,7 +136,12 @@ export function AddCycleDialog({
     }
   }
 
-  const [formState, setFormState] = useState<CycleDraft>(draftForm);
+  function yesterday() {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return toDateInputValue(d);
+  }
+
   // подсветка — блок текущего времени суток, а не выбранного часа
   const nowHour = new Date().getHours();
   const blockLabel = morning(nowHour)
@@ -129,18 +151,8 @@ export function AddCycleDialog({
       : evening(nowHour)
         ? "вечернего"
         : "ночного";
-  // блоки по 6 часов: 00–05, 06–11, 12–17, 18–23
   const blockHourStart = Math.floor(nowHour / 6) * 6;
   const blockHourEnd = blockHourStart + 5;
-
-  function yesterday() {
-    const d = new Date();
-    d.setDate(d.getDate() - 1);
-    const year = d.getFullYear();
-    const month = pad2(d.getMonth() + 1);
-    const day = pad2(d.getDate());
-    return `${year}-${month}-${day}`;
-  }
 
   return (
     <Modal
