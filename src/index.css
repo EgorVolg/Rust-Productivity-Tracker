@@ -42,13 +42,13 @@
   --shadow-primary: 0 10px 30px rgb(124 58 237 / 0.45);
 }
 
-/* Стеклянная карточка */
+/* Стеклянная карточка — более прозрачная для glass UI */
 @utility glass {
-  background-color: rgb(255 255 255 / 0.06);
-  border: 1px solid rgb(255 255 255 / 0.12);
+  background-color: rgb(255 255 255 / 0.03);
+  border: 1px solid rgb(255 255 255 / 0.08);
   border-radius: var(--radius-card);
   /* префикс -webkit- для Safari добавит сборка */
-  backdrop-filter: blur(24px) saturate(150%);
+  backdrop-filter: blur(32px) saturate(180%);
   box-shadow: var(--shadow-glass);
 }
 
