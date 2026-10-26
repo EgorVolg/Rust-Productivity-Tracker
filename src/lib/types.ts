@@ -1,5 +1,20 @@
 
-export const CATEGORIES: readonly string[] = ['rust', 'english', 'other', 'work', 'health', 'family', 'hobby', 'leisure', 'other'];
+export const CATEGORIES: readonly string[] = ['rust', 'english', 'work', 'health', 'family', 'hobby', 'leisure', 'other'];
+
+export type Category = string;
+
+export const Colors = [
+  "#f87171",
+  "#fb923c",
+  "#facc15",
+  "#4ade80",
+  "#22d3ee",
+  "#818cf8",
+  "#e879f9",
+];
+
+export type Color = string;
+
 
 export interface Cycle {
   id: string;
@@ -15,6 +30,7 @@ export interface Cycle {
   minutes: number;
   /** 1–5 */
   energy: number;
+  color: Color;
 }
 
 /** §3.2: номер строки в файле и причина. */

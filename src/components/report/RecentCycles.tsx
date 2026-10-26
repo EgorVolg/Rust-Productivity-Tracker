@@ -6,7 +6,7 @@ import {
   Button,
   Card,
   CardHeader,
-  CategoryPill,
+  CategoryDot,
   EnergyDots,
   IconButton,
   IconDots,
@@ -47,7 +47,7 @@ export function RecentCycles({
   const cyclesData = showAll
     ? [...cycles].reverse()
     : [...cycles].slice(-5).reverse();
-
+  console.log(cyclesData);
   return (
     <Card
       aria-labelledby="h-last"
@@ -125,8 +125,9 @@ export function RecentCycles({
               <span role="cell" className="font-mono text-soft">
                 {pad2(c.hour)}:00
               </span>
-              <span role="cell">
-                <CategoryPill category={c.category} />
+              <span role="cell" className="flex items-center gap-2">
+                <CategoryDot color={c.color} />
+                {c.category}
               </span>
               <span role="cell" title={c.topic} className="truncate">
                 {truncate(c.topic)}

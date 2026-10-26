@@ -9,6 +9,7 @@ pub struct Cycle {
     pub date: String,
     pub weekday: u8,
     pub hour: u8,
+    pub color: String,
     pub category: String,
     pub topic: String,
     pub minutes: u16,
@@ -56,6 +57,6 @@ pub enum RewriteAction {
     Replace(String),
 }
 
-pub const HEADER: &str = "id,date,weekday,hour,category,topic,minutes,energy";
+pub const HEADER: &str = "id,date,weekday,hour,color,category,topic,minutes,energy";
 pub const PERFECT_DAY_MINUTES: u32 = 240;
 pub type AggMinutes = HashMap<NaiveDate, u32>;

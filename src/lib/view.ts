@@ -49,9 +49,10 @@ export interface CycleDraft {
   date: string;
   weekdayLabel: string;
   hour: number;
+  color: string;
   category: string;
   topic: string;
-  minutes: string;
+  minutes: number;
   energy: number; 
   note?: string;
   errors?: { date?: string; topic?: string; minutes?: string };

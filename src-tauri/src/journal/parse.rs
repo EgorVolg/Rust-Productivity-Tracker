@@ -16,8 +16,8 @@ pub fn read_journal_file(path: &Path) -> Result<String, String> {
 
 pub fn parse_line(line: &str, _line_no: usize) -> Result<Cycle, String> {
     let parts: Vec<&str> = line.split(',').map(str::trim).collect();
-    if parts.len() != 8 {
-        return Err(format!("ожидалось 8 полей, найдено {}", parts.len()));
+    if parts.len() != 9 {
+        return Err(format!("ожидалось 9 полей, найдено {}", parts.len()));
     }
 
     let id = parts[0];
@@ -25,21 +25,24 @@ pub fn parse_line(line: &str, _line_no: usize) -> Result<Cycle, String> {
         return Err("пустой id".to_string());
     }
 
+    let color = parts[4].to_string().trim().to_lowercase();
+
     let hour: u8 = parts[3]
         .parse()
         .map_err(|_| format!("«час» — не число: {}", parts[3]))?;
-    let minutes: u16 = parts[6]
+    let minutes: u16 = parts[7]
         .parse()
-        .map_err(|_| format!("«минуты» — не число: {}", parts[6]))?;
-    let energy: u8 = parts[7]
+        .map_err(|_| format!("«минуты» — не число: {}", parts[7]))?;
+    let energy: u8 = parts[8]
         .parse()
-        .map_err(|_| format!("«энергия» — не число: {}", parts[7]))?;
+        .map_err(|_| format!("«энергия» — не число: {}", parts[8]))?;
 
     let input = CycleInput {
         date: parts[1].to_string(),
         hour,
-        category: parts[4].to_string(),
-        topic: parts[5].to_string(),
+        color,
+        category: parts[5].to_string(),
+        topic: parts[6].to_string(),
         minutes,
         energy,
     };
@@ -60,8 +63,9 @@ pub fn parse_line(line: &str, _line_no: usize) -> Result<Cycle, String> {
         date: date.format("%Y-%m-%d").to_string(),
         weekday: date.weekday().number_from_monday() as u8,
         hour: input.hour,
-        category: input.category,
-        topic: input.topic,
+        color: input.color.trim().to_lowercase(),
+        category: input.category.trim().to_lowercase(),
+        topic: input.topic.trim().to_string(),
         minutes: input.minutes,
         energy: input.energy,
     })

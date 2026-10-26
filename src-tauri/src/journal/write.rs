@@ -1,7 +1,7 @@
+use super::{path::ensure_migrated, types::HEADER};
+use crate::cycle::CycleInput;
 use chrono::Datelike;
 use std::path::Path;
-use crate::cycle::CycleInput;
-use super::{path::ensure_migrated, types::HEADER};
 
 pub fn write_to_journal(path: &Path, cycle_form: &CycleInput) -> Result<(), String> {
     ensure_migrated(path)?;
@@ -31,11 +31,12 @@ pub fn write_to_journal(path: &Path, cycle_form: &CycleInput) -> Result<(), Stri
     std::io::Write::write_all(
         &mut file,
         format!(
-            "{},{},{},{},{},{},{},{}\n",
+            "{},{},{},{},{},{},{},{},{}\n",
             id,
             date.format("%Y-%m-%d"),
             date.weekday().number_from_monday(),
             cycle_form.hour,
+            cycle_form.color.trim().to_lowercase(),
             cycle_form.category.trim().to_lowercase(),
             cycle_form.topic.trim(),
             cycle_form.minutes,

@@ -8,6 +8,7 @@ function emptyForm(): CycleInput {
     return {
         date: now.toISOString().split("T")[0],
         hour: now.getHours(),
+        color: "#facc15",
         category: "",
         topic: "",
         minutes: 50,
@@ -20,6 +21,7 @@ function fromLastCycle(last: Cycle): CycleInput {
     return {
         date: now.toISOString().split("T")[0],
         hour: now.getHours(),
+        color: last.color,
         category: last.category,
         topic: last.topic,
         minutes: 50,
@@ -62,6 +64,7 @@ export function useCycleManager({ journal, reload, notify }: Args) {
         setFormData({
             date: cycle.date,
             hour: cycle.hour,
+            color: cycle.color,
             category: cycle.category,
             topic: cycle.topic,
             minutes: cycle.minutes,
@@ -98,6 +101,7 @@ export function useCycleManager({ journal, reload, notify }: Args) {
         const payload: CycleInput = {
             date: now.toISOString().split("T")[0],
             hour: now.getHours(),
+            color: cycle.color,
             category: cycle.category,
             topic: cycle.topic,
             minutes: cycle.minutes,

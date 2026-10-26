@@ -1,4 +1,4 @@
-import { CategoryDot } from '../ui';
+import { CategoryLabel } from '../ui';
 
 interface ReportHeaderProps {
   fileName: string;
@@ -18,14 +18,8 @@ export function ReportHeader({ fileName, period, filtersText }: ReportHeaderProp
         </p>
       </div>
       <div className="flex items-center gap-5 font-mono text-[13px] font-medium text-soft">
-        <span className="flex items-center gap-2">
-          <CategoryDot category="rust" />
-          rust
-        </span>
-        <span className="flex items-center gap-2">
-          <CategoryDot category="english" />
-          english
-        </span>
+        <CategoryLabel category="rust" />
+        <CategoryLabel category="english" />
       </div>
     </div>
   );

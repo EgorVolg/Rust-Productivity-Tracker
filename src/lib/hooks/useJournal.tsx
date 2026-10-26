@@ -24,7 +24,7 @@ export function useJournal() {
   useEffect(() => {
     loadJournal();
   }, [loadJournal]);
-
+  
   return {
     journal,
     loading,

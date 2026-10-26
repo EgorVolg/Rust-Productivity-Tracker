@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { cn } from "../../lib/cn";
-import { HOURS, pad2, truncate } from "../../lib/format";
-import type { CycleDraft } from "../../lib/view";
+import { cn } from "@/lib";
+import { HOURS, pad2, truncate } from "@/lib";
+import type { CycleDraft } from "@/lib";
 import {
   Button,
   CategorySelect,
@@ -16,12 +16,16 @@ import {
   TopicInput,
 } from "../ui";
 import { api, CycleInput } from "@/lib";
-
-const MINUTE_PRESETS = [15, 25, 50, 90];
-const ENERGY = [1, 2, 3, 4, 5];
-const morning = (h: number) => h >= 6 && h < 12;
-const day = (h: number) => h >= 12 && h < 18;
-const evening = (h: number) => h >= 18 && h < 24;
+import {
+  MINUTE_PRESETS,
+  ENERGY,
+  morning,
+  day,
+  evening,
+  formatWeekday,
+  today,
+  yesterday,
+} from "./helper";
 
 interface AddCycleDialogProps {
   /** недавние темы выбранной категории */
@@ -38,18 +42,6 @@ interface AddCycleDialogProps {
   editingCycleId: string | null;
 }
 
-function toDateInputValue(d: Date): string {
-  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
-}
-
-function today() {
-  return toDateInputValue(new Date());
-}
-
-function formatWeekday(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("ru-RU", { weekday: "long" });
-}
-
 export function AddCycleDialog({
   suggestions,
   open,
@@ -59,20 +51,15 @@ export function AddCycleDialog({
   formData,
   editingCycleId,
 }: AddCycleDialogProps) {
-  /** ошибки от Rust: поле → сообщение */
   const [errors, setErrors] = useState<Record<string, string>>({});
-  /** ошибка не по полю (например, Tauri не разобрал запрос) */
   const [formError, setFormError] = useState<string | null>(null);
-
-  // Lazy init — диалог монтируется заново на каждое открытие (key={version} в App),
-  // поэтому стартовые значения берутся из актуального formData: дата, час, энергия
-  // в режиме edit — из цикла, в режиме add — из «последнего цикла + сейчас».
   const [formState, setFormState] = useState<CycleDraft>(() => ({
     date: formData.date,
     hour: formData.hour,
+    color: formData.color,
     category: formData.category,
     topic: formData.topic,
-    minutes: formData.minutes.toString(),
+    minutes: formData.minutes,
     energy: formData.energy,
     mode: addOrEdit,
     weekdayLabel: formatWeekday(formData.date),
@@ -102,13 +89,14 @@ export function AddCycleDialog({
   }
 
   async function handleSubmit() {
-    const { date, hour, category, topic, minutes, energy } = formState;
+    const { date, hour, category, topic, minutes, energy, color } = formState;
     setErrors({});
     setFormError(null);
 
     const payload: CycleInput = {
       date,
       hour,
+      color: color || "#ffffff",
       category,
       topic,
       minutes: Number(minutes),
@@ -136,12 +124,6 @@ export function AddCycleDialog({
     }
   }
 
-  function yesterday() {
-    const d = new Date();
-    d.setDate(d.getDate() - 1);
-    return toDateInputValue(d);
-  }
-
   // подсветка — блок текущего времени суток, а не выбранного часа
   const nowHour = new Date().getHours();
   const blockLabel = morning(nowHour)
@@ -153,6 +135,10 @@ export function AddCycleDialog({
         : "ночного";
   const blockHourStart = Math.floor(nowHour / 6) * 6;
   const blockHourEnd = blockHourStart + 5;
+
+  function handleColorChange(color: string) { 
+    setField("color", color);
+  }
 
   return (
     <Modal
@@ -257,8 +243,12 @@ export function AddCycleDialog({
             <FieldLabel htmlFor="ad-cat">Категория</FieldLabel>
             <CategorySelect
               id="ad-cat"
+              color={formState.color}
+              onColorChange={handleColorChange}
               value={formState.category}
               onValueChange={(category) => setField("category", category)}
+              invalid={Boolean(errors.category)}
+              aria-describedby={errors.category ? "ad-cat-err" : undefined}
             />
             {errors.category && (
               <FieldError id="ad-cat-err">{errors.category}</FieldError>
@@ -304,7 +294,7 @@ export function AddCycleDialog({
                 inputMode="numeric"
                 autoComplete="off"
                 value={formState.minutes}
-                onChange={(e) => setField("minutes", e.target.value)}
+                onChange={(e) => setField("minutes", Number(e.target.value))}
                 invalid={Boolean(errors.minutes)}
                 aria-describedby={errors.minutes ? "ad-min-err" : undefined}
                 className="w-21"
@@ -312,9 +302,9 @@ export function AddCycleDialog({
               {MINUTE_PRESETS.map((v) => (
                 <ToggleChip
                   key={v}
-                  pressed={String(v) === formState.minutes}
+                  pressed={v === formState.minutes}
                   className="h-11 rounded-xl px-2.5 font-mono text-[13px]"
-                  onClick={() => setField("minutes", String(v))}
+                  onClick={() => setField("minutes", v)}
                 >
                   {v} мин
                 </ToggleChip>
