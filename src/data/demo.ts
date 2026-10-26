@@ -69,11 +69,11 @@ export const topWords: WordStat[] = [
 
 /** последние циклы, новые сверху */
 export const recentCycles: Cycle[] = [
-  { id: 'c36', date: '2026-10-20', weekday: 2, hour: 14, category: 'english', topic: 'Разговор в English Practice 🎧', minutes: 15, energy: 3 },
-  { id: 'c35', date: '2026-10-20', weekday: 2, hour: 6, category: 'rust', topic: 'ToDo на Tauri: команды', minutes: 90, energy: 5 },
-  { id: 'c34', date: '2026-10-19', weekday: 1, hour: 12, category: 'english', topic: 'Sonny Sangha без субтитров', minutes: 15, energy: 3 },
-  { id: 'c33', date: '2026-10-19', weekday: 1, hour: 7, category: 'rust', topic: 'Rustlings vecs', minutes: 50, energy: 4 },
-  { id: 'c32', date: '2026-10-19', weekday: 1, hour: 6, category: 'rust', topic: 'Глава 8: векторы', minutes: 50, energy: 4 },
+  { id: 'c36', date: '2026-10-20', weekday: 2, hour: 14, category: 'english', topic: 'Разговор в English Practice 🎧', minutes: 15, energy: 3, color: '#22d3ee' },
+  { id: 'c35', date: '2026-10-20', weekday: 2, hour: 6, category: 'rust', topic: 'ToDo на Tauri: команды', minutes: 90, energy: 5, color: '#f87171' },
+  { id: 'c34', date: '2026-10-19', weekday: 1, hour: 12, category: 'english', topic: 'Sonny Sangha без субтитров', minutes: 15, energy: 3, color: '#22d3ee' },
+  { id: 'c33', date: '2026-10-19', weekday: 1, hour: 7, category: 'rust', topic: 'Rustlings vecs', minutes: 50, energy: 4, color: '#f87171' },
+  { id: 'c32', date: '2026-10-19', weekday: 1, hour: 6, category: 'rust', topic: 'Глава 8: векторы', minutes: 50, energy: 4, color: '#f87171' },
 ];
 
 export const inputErrors: ParseError[] = [
@@ -95,9 +95,10 @@ export const cycleDraft: CycleDraft = {
   date: '2026-10-20',
   weekdayLabel: 'Вторник · день 2',
   hour: 8,
+  color: '#f87171',
   category: 'rust',
   topic: 'Глава 10: обобщения',
-  minutes: '50',
+  minutes: 50,
   energy: 4,
 };
 

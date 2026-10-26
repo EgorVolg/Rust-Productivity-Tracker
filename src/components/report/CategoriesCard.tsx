@@ -1,9 +1,8 @@
 import { cn } from '../../lib/cn';
-import type { Category } from '../../lib/types';
 import type { CategoryStat } from '../../lib/view';
+import { Colors } from '../../lib';
 import { Card, CardHeader, CategoryLabel } from '../ui';
 
-const BAR: Record<Category, string> = { rust: 'bg-rust', english: 'bg-english' };
 const COLUMNS = ['Категория', 'Циклы', 'Минуты', 'Доля'];
 
 /** §5.3: циклы, минуты, доля в процентах с одним знаком */
@@ -13,9 +12,15 @@ export function CategoriesCard({ stats }: { stats: CategoryStat[] }) {
       <CardHeader id="h-cat" title="По категориям" tag="§5.3" />
 
       <div aria-hidden="true" className="flex h-3.5 gap-1">
-        {stats.map((s) => (
-          <div key={s.category} className={cn('rounded-[7px]', BAR[s.category])} style={{ width: `${s.share}%` }} />
-        ))}
+        {stats.map((s, index) => {
+          return (
+            <div
+              key={s.category}
+              className="rounded-[7px]"
+              style={{ width: `${s.share}%`, backgroundColor: Colors[index] }}
+            />
+          );
+        })}
       </div>
 
       <table className="w-full border-collapse text-sm font-medium">
@@ -33,10 +38,10 @@ export function CategoriesCard({ stats }: { stats: CategoryStat[] }) {
           </tr>
         </thead>
         <tbody>
-          {stats.map((s) => (
+          {stats.map((s, index) => (
             <tr key={s.category} className="border-t border-white/8">
               <td className="py-3.5">
-                <CategoryLabel category={s.category} />
+                <CategoryLabel color={Colors[index]} />
               </td>
               <td className="py-3.5 text-right font-mono">{s.cycles}</td>
               <td className="py-3.5 text-right font-mono">{s.minutes}</td>

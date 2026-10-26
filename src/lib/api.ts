@@ -4,6 +4,7 @@ import type { ParseResult } from "./types";
 export interface CycleInput {
   date: string;
   hour: number;
+  color: string;
   category: string;
   topic: string;
   minutes: number;

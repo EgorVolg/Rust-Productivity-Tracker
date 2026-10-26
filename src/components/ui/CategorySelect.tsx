@@ -1,12 +1,15 @@
 import { Autocomplete } from "@base-ui/react/autocomplete";
 import { cn } from "../../lib/cn";
-import { CATEGORIES, type Category } from "../../lib/types";
+import { CATEGORIES, Colors, type CategoryStat } from "../../lib";
 import { CategoryDot } from "./Display";
-import { IconCheck, IconChevronDown } from "./icons";
+import { IconCheck, IconChevronDown } from "./icons"; 
+import { ColorCrescent } from "./ColorCrescent";
 
 interface CategorySelectProps {
-  value: Category;
-  onValueChange: (value: Category) => void;
+  value: CategoryStat["category"];
+  onValueChange: (value: CategoryStat["category"]) => void; 
+  color: string;
+  onColorChange: (color: string) => void;
   id?: string;
   className?: string;
   invalid?: boolean;
@@ -16,6 +19,8 @@ interface CategorySelectProps {
 export function CategorySelect({
   value,
   onValueChange,
+  color,
+  onColorChange,
   invalid,
   ariaDescribedBy,
   id,
@@ -30,20 +35,18 @@ export function CategorySelect({
     >
       <Autocomplete.InputGroup
         className={cn(
-          "group flex h-11 w-full items-center rounded-xl border bg-well/50 p-1.5",
+          "group flex h-11 w-full items-center gap-2 rounded-xl border bg-well/50 p-1.5",
           "focus-within:border-lilac/60 focus-within:ring-2 focus-within:ring-accent/30",
           "border-white/16",
           className,
         )}
       >
-        <Autocomplete.Item
-          className={cn(
-            "flex h-10 cursor-pointer items-center gap-2.5 rounded-[10px] px-2.5 font-mono text-sm text-lilac outline-none select-none",
-            "data-highlighted:bg-accent/16 data-selected:text-fg",
-          )}
-        >
-          <CategoryDot category={value} />
-        </Autocomplete.Item>
+        <ColorCrescent
+          color={color}
+          onColorChange={onColorChange}
+          trigger={<CategoryDot color={color} className="size-3" />}
+        />
+
         <Autocomplete.Input
           id={id}
           autoComplete="off"
@@ -72,7 +75,7 @@ export function CategorySelect({
             )}
           >
             <Autocomplete.List>
-              {CATEGORIES.map((c) => (
+              {CATEGORIES.map((c, index) => (
                 <Autocomplete.Item
                   key={c}
                   value={c}
@@ -81,7 +84,7 @@ export function CategorySelect({
                     "data-highlighted:bg-accent/16 data-selected:text-fg",
                   )}
                 >
-                  <CategoryDot category={c} />
+                  <CategoryDot color={Colors[index % Colors.length]} />
                   <span className="flex-1">{c}</span>
                   {value === c && <IconCheck className="size-4 text-accent" />}
                 </Autocomplete.Item>

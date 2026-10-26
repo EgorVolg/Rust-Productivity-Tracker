@@ -1,7 +1,8 @@
+import { useState } from "react";
 import type { ReactNode } from "react";
 import { cn } from "../../lib/cn";
 import { plural } from "../../lib/format";
-import type { Filters } from "../../lib/types";
+import { Colors, type Filters } from "../../lib/types";
 import type { PanelId } from "../../lib/view";
 import { CategoryPopover, PeriodPopover, TopWordsPopover } from "../overlays";
 import {
@@ -27,6 +28,7 @@ export function FilterBar({
   presets,
   openPanel,
 }: FilterBarProps) {
+  const [categoryColor, setCategoryColor] = useState(Colors[0]);
   const periodActive = filters.from !== "" || filters.to !== "";
   const anyFilter =
     filters.category !== "all" || periodActive || filters.top !== 10;
@@ -55,7 +57,12 @@ export function FilterBar({
           active={filters.category !== "all"}
           open={openPanel === "category"}
           popover={
-            <CategoryPopover selected={filters.category} counts={counts} />
+            <CategoryPopover
+              selected={filters.category}
+              counts={counts}
+              color={categoryColor}
+              onColorChange={setCategoryColor}
+            />
           }
         />
         <FilterButton
