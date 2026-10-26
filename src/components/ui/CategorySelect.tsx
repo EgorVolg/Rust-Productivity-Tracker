@@ -1,4 +1,4 @@
-import { Select } from "@base-ui/react/select";
+import { Autocomplete } from "@base-ui/react/autocomplete";
 import { cn } from "../../lib/cn";
 import { CATEGORIES, type Category } from "../../lib/types";
 import { CategoryDot } from "./Display";
@@ -9,49 +9,61 @@ interface CategorySelectProps {
   onValueChange: (value: Category) => void;
   id?: string;
   className?: string;
+  invalid?: boolean;
+  ariaDescribedBy?: string;
 }
 
-/** Выпадающий список категорий; без прокрутки видно 4 пункта. */
 export function CategorySelect({
   value,
   onValueChange,
+  invalid,
+  ariaDescribedBy,
   id,
   className,
 }: CategorySelectProps) {
   return (
-    <Select.Root
-      id={id}
+    <Autocomplete.Root
+      items={CATEGORIES}
       value={value}
-      onValueChange={(next) => next && onValueChange(next)}
+      onValueChange={onValueChange}
+      openOnInputClick
     >
-      <Select.Trigger
+      <Autocomplete.InputGroup
         className={cn(
-          "group flex h-11 w-full items-center gap-2.5 rounded-xl border border-white/16 bg-well/50 px-3 font-mono text-sm text-fg outline-none",
-          "focus-visible:border-lilac/60 focus-visible:ring-2 focus-visible:ring-accent/30 data-popup-open:border-lilac/40",
+          "group flex h-11 w-full items-center rounded-xl border bg-well/50 p-1.5",
+          "focus-within:border-lilac/60 focus-within:ring-2 focus-within:ring-accent/30",
+          "border-white/16",
           className,
         )}
       >
-        <Select.Value className="flex-1">
-          {(v: Category) => (
-            <span className="flex items-center gap-2.5">
-              <CategoryDot category={v} />
-              {v}
-            </span>
+        <Autocomplete.Item
+          className={cn(
+            "flex h-10 cursor-pointer items-center gap-2.5 rounded-[10px] px-2.5 font-mono text-sm text-lilac outline-none select-none",
+            "data-highlighted:bg-accent/16 data-selected:text-fg",
           )}
-        </Select.Value>
-        <Select.Icon className="text-muted transition-transform group-data-popup-open:rotate-180">
-          <IconChevronDown className="size-4" />
-        </Select.Icon>
-      </Select.Trigger>
-
-      <Select.Portal>
-        {/* z выше модалки (z-90) */}
-        <Select.Positioner
-          alignItemWithTrigger={false}
-          sideOffset={6}
-          className="z-100"
         >
-          <Select.Popup
+          <CategoryDot category={value} />
+        </Autocomplete.Item>
+        <Autocomplete.Input
+          id={id}
+          autoComplete="off"
+          aria-invalid={invalid}
+          aria-describedby={ariaDescribedBy}
+          className="h-full min-w-0 flex-1 bg-transparent font-sans text-sm text-fg outline-none"
+        />
+
+        <Autocomplete.Trigger
+          aria-label="Показать темы"
+          className="flex size-8 items-center justify-center rounded-lg text-muted outline-none hover:text-lilac focus-visible:ring-2 focus-visible:ring-accent/30"
+        >
+          <IconChevronDown className="size-4 transition-transform group-has-data-popup-open:rotate-180" />
+        </Autocomplete.Trigger>
+      </Autocomplete.InputGroup>
+
+      <Autocomplete.Portal>
+        {/* z выше модалки (z-90) */}
+        <Autocomplete.Positioner sideOffset={6} className="z-100">
+          <Autocomplete.Popup
             className={cn(
               "panel box-border w-(--anchor-width) overflow-y-auto p-1.5 outline-none",
               // 4 пункта по h-10 + вертикальный padding
@@ -59,9 +71,9 @@ export function CategorySelect({
               "[&::-webkit-scrollbar-track]:my-(--radius-panel)",
             )}
           >
-            <Select.List>
+            <Autocomplete.List>
               {CATEGORIES.map((c) => (
-                <Select.Item
+                <Autocomplete.Item
                   key={c}
                   value={c}
                   className={cn(
@@ -70,16 +82,14 @@ export function CategorySelect({
                   )}
                 >
                   <CategoryDot category={c} />
-                  <Select.ItemText className="flex-1">{c}</Select.ItemText>
-                  <Select.ItemIndicator>
-                    <IconCheck className="size-4 text-accent" />
-                  </Select.ItemIndicator>
-                </Select.Item>
+                  <span className="flex-1">{c}</span>
+                  {value === c && <IconCheck className="size-4 text-accent" />}
+                </Autocomplete.Item>
               ))}
-            </Select.List>
-          </Select.Popup>
-        </Select.Positioner>
-      </Select.Portal>
-    </Select.Root>
+            </Autocomplete.List>
+          </Autocomplete.Popup>
+        </Autocomplete.Positioner>
+      </Autocomplete.Portal>
+    </Autocomplete.Root>
   );
 }

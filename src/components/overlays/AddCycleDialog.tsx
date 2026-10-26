@@ -259,6 +259,8 @@ export function AddCycleDialog({
               id="ad-cat"
               value={formState.category}
               onValueChange={(category) => setField("category", category)}
+              invalid={Boolean(errors.category)}
+              aria-describedby={errors.category ? "ad-cat-err" : undefined}
             />
             {errors.category && (
               <FieldError id="ad-cat-err">{errors.category}</FieldError>
