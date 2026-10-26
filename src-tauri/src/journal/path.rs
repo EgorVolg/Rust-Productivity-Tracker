@@ -10,7 +10,7 @@ pub fn journal_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
         .app_data_dir()
         .map_err(|e| format!("Не найдена папка данных: {e}"))?;
     std::fs::create_dir_all(&dir).map_err(|e| format!("Не удалось создать папку данных: {e}"))?;
-
+    println!("[journal] путь: {}", dir.join("journal.csv").display());
     Ok(dir.join("journal.csv"))
 }
 

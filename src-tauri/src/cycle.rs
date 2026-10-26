@@ -5,6 +5,7 @@ use std::collections::HashMap;
 pub struct CycleInput {
     pub date: String,
     pub hour: u8,
+    pub color: String,
     pub category: String,
     pub topic: String,
     pub minutes: u16,
