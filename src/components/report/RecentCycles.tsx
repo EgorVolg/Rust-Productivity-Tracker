@@ -58,7 +58,7 @@ export function RecentCycles({
         title={
           showAll
             ? `Все циклы · ${total}`
-            : `Последние ${total} ${plural(total, "цикл", "цикла", "циклов")}`
+            : `Последние ${5} ${plural(5, "цикл", "цикла", "циклов")}`
         }
         actions={
           <div className="flex items-center gap-2.5">

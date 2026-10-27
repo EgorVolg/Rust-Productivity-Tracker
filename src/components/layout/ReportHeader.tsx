@@ -1,4 +1,5 @@
 import { CategoryLabel } from '../ui';
+import { getCategoryColor } from '@/lib';
 
 interface ReportHeaderProps {
   fileName: string;
@@ -18,8 +19,8 @@ export function ReportHeader({ fileName, period, filtersText }: ReportHeaderProp
         </p>
       </div>
       <div className="flex items-center gap-5 font-mono text-[13px] font-medium text-soft">
-        <CategoryLabel category="rust" />
-        <CategoryLabel category="english" />
+        <CategoryLabel color={getCategoryColor("rust")} />
+        <CategoryLabel color={getCategoryColor("english")} />
       </div>
     </div>
   );

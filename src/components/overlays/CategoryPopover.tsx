@@ -14,14 +14,12 @@ interface CategoryPopoverProps {
   selected: CategoryFilter;
   counts: Record<CategoryFilter, number>;
   color: string;
-  onColorChange: (color: string) => void;
 }
 
 export function CategoryPopover({
   selected,
   counts,
   color,
-  onColorChange,
 }: CategoryPopoverProps) {
   return (
     <Popover aria-labelledby="cat-title" className="w-72.5 gap-2.5 p-3.5">

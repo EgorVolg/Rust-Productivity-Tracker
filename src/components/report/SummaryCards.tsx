@@ -1,16 +1,18 @@
 import type { ReactNode } from "react";
 import { cn } from "../../lib/cn";
 import { DASH, plural } from "../../lib/format";
-import type { Summary } from "../../lib/view";
+import type { Summary, CategoryStat } from "../../lib/view";
 import { Duration } from "../ui";
 import { CycleInput, Journal } from "@/lib";
 
 export function SummaryCards({
   journal,
   summary,
+  categories,
 }: {
   journal: Journal;
   summary: Summary | null;
+  categories: CategoryStat[];
 }) {
   const s = summary;
   const empty = s === null;
@@ -20,12 +22,23 @@ export function SummaryCards({
     0,
   );
 
+  // Вычисляем количество уникальных дней для среднего времени
+  const uniqueDays = new Set(journal.cycles.map(c => c.date)).size;
+  const avgPerDay = uniqueDays > 0 ? totalTime / uniqueDays : 0;
+
+  // Топ-5 категорий по количеству циклов
+  const topCategories = [...categories]
+    .sort((a, b) => b.cycles - a.cycles)
+    .slice(0, 5)
+    .map(c => `${c.category} ${c.cycles}`)
+    .join(" · ");
+
   return (
     <section aria-label="Сводка" className="grid grid-cols-4 gap-5">
       <Stat
         label="Всего циклов"
         value={journal.lineCount}
-        caption={s ? `rust ${s.rust} · english ${s.english}` : "нет циклов"}
+        caption={topCategories || "нет циклов"}
         empty={empty}
       />
       <Stat
@@ -46,8 +59,8 @@ export function SummaryCards({
       />
       <Stat
         label="Среднее в рабочий день"
-        value={<Duration minutes={totalTime / journal.streakDays} />}
-        caption={`${(totalTime / journal.streakDays).toFixed(1)} мин`}
+        value={<Duration minutes={avgPerDay} />}
+        caption={`${avgPerDay.toFixed(1)} мин`}
         empty={empty}
       />
     </section>

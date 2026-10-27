@@ -17,10 +17,11 @@ interface HeatmapProps {
 
 export function Heatmap({ matrix, bestDay, bestHour, tooltip = null }: HeatmapProps) {
   const max = Math.max(0, ...matrix.flat());
+  // Одна ячейка максимум 60 минут, поэтому max может быть 60
   const level = (v: number) => (v <= 0 || max <= 0 ? 0 : Math.min(4, Math.ceil((v / max) * 4)));
   const legend = [0, 1, 2, 3, 4].map((k) => ({
     k,
-    text: k === 0 ? '0 мин' : `${GLYPHS[k]} ${Math.floor((max * (k - 1)) / 4) + 1}–${Math.floor((max * k) / 4)}`,
+    text: k === 0 ? '0 мин' : `${GLYPHS[k]} ${Math.floor((max * (k - 1)) / 4) + 1}–${Math.floor((max * k) / 4)} мин`,
   }));
 
   return (
