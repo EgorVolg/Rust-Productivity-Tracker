@@ -15,6 +15,13 @@ export const Colors = [
 
 export type Color = string;
 
+/** Получить цвет категории по её имени */
+export function getCategoryColor(category: string): Color {
+  const index = CATEGORIES.indexOf(category);
+  if (index === -1) return Colors[Colors.length - 1];
+  return Colors[index % Colors.length];
+}
+
 
 export interface Cycle {
   id: string;

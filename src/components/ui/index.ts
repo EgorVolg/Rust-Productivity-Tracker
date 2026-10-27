@@ -4,6 +4,5 @@ export * from './Display';
 export * from './Field';
 export * from './icons';
 export * from './Overlay';
-export * from './ColorCrescent';
 export * from './CategorySelect';
 export * from './TopicInput';
