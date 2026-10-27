@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { cn } from "@/lib";
+import { cn, Colors, getCategoryColor } from "@/lib";
 import { HOURS, pad2, truncate } from "@/lib";
 import type { CycleDraft } from "@/lib";
 import {
   Button,
+  CategoryDot,
   CategorySelect,
   FieldError,
   FieldHint,
@@ -64,6 +65,8 @@ export function AddCycleDialog({
     mode: addOrEdit,
     weekdayLabel: formatWeekday(formData.date),
   }));
+  const [color, setColor] = useState(formData.color);
+  const [openColorPicker, setOpenColorPicker] = useState(false);
 
   function setField<K extends keyof CycleDraft>(key: K, value: CycleDraft[K]) {
     setFormState((s) => {
@@ -89,14 +92,14 @@ export function AddCycleDialog({
   }
 
   async function handleSubmit() {
-    const { date, hour, category, topic, minutes, energy, color } = formState;
+    const { date, hour, category, topic, minutes, energy } = formState;
     setErrors({});
     setFormError(null);
 
     const payload: CycleInput = {
       date,
       hour,
-      color: color || "#ffffff",
+      color,
       category,
       topic,
       minutes: Number(minutes),
@@ -136,8 +139,12 @@ export function AddCycleDialog({
   const blockHourStart = Math.floor(nowHour / 6) * 6;
   const blockHourEnd = blockHourStart + 5;
 
-  function handleColorChange(color: string) { 
-    setField("color", color);
+  function handleColorChange(color: string) {
+    setColor(color);
+  }
+
+  function handleCloseColorPicker() {
+    setOpenColorPicker(!openColorPicker);
   }
 
   return (
@@ -239,19 +246,34 @@ export function AddCycleDialog({
 
         {/* Правая колонка: что и как */}
         <div className="flex flex-col gap-5">
-          <div className="flex flex-col gap-2">
+          <div className="relative flex flex-col gap-2">
             <FieldLabel htmlFor="ad-cat">Категория</FieldLabel>
             <CategorySelect
               id="ad-cat"
-              color={formState.color}
-              onColorChange={handleColorChange}
+              color={color}
+              setOpenColorPicker={handleCloseColorPicker}
               value={formState.category}
               onValueChange={(category) => setField("category", category)}
+              onCategoryChange={(category, categoryColor) => setColor(categoryColor)}
               invalid={Boolean(errors.category)}
               aria-describedby={errors.category ? "ad-cat-err" : undefined}
             />
             {errors.category && (
               <FieldError id="ad-cat-err">{errors.category}</FieldError>
+            )}
+
+            {openColorPicker && (
+              <div className="absolute left-0 right-0 -bottom-5 flex justify-center items-center gap-2">
+                {Colors.map((color) => (
+                  <button
+                    key={color}
+                    onClick={() => handleColorChange(color)}
+                    className="flex cursor-pointer items-center justify-center w-3.5 h-3.5"
+                  >
+                    <CategoryDot className="size-4" color={color} />
+                  </button>
+                ))}
+              </div>
             )}
           </div>
 

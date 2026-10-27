@@ -1,7 +1,6 @@
 import { cn } from "../../lib/cn";
 import type { Filters } from "../../lib/types";
 import { CategoryDot, IconCheck, Popover } from "../ui";
-import { ColorCrescent } from "../ui/ColorCrescent";
 
 type CategoryFilter = Filters["category"];
 
@@ -74,16 +73,6 @@ export function CategoryPopover({
         <p className="m-0 text-xs font-medium text-subtle">
           Справа — число циклов с учётом периода
         </p>
-        <ColorCrescent
-          color={color}
-          onColorChange={onColorChange}
-          trigger={
-            <div
-              className="size-4 rounded-full"
-              style={{ backgroundColor: color }}
-            />
-          }
-        />
       </div>
     </Popover>
   );

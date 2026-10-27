@@ -1,36 +1,44 @@
 import { Autocomplete } from "@base-ui/react/autocomplete";
 import { cn } from "../../lib/cn";
-import { CATEGORIES, Colors, type CategoryStat } from "../../lib";
+import { CATEGORIES, Colors, getCategoryColor, type CategoryStat } from "../../lib";
 import { CategoryDot } from "./Display";
-import { IconCheck, IconChevronDown } from "./icons"; 
-import { ColorCrescent } from "./ColorCrescent";
+import { IconCheck, IconChevronDown } from "./icons";
 
 interface CategorySelectProps {
   value: CategoryStat["category"];
-  onValueChange: (value: CategoryStat["category"]) => void; 
+  onValueChange: (value: CategoryStat["category"]) => void;
+  onCategoryChange?: (category: CategoryStat["category"], color: string) => void;
   color: string;
-  onColorChange: (color: string) => void;
   id?: string;
   className?: string;
   invalid?: boolean;
   ariaDescribedBy?: string;
+  setOpenColorPicker: () => void;
 }
 
 export function CategorySelect({
   value,
   onValueChange,
+  onCategoryChange,
   color,
-  onColorChange,
   invalid,
   ariaDescribedBy,
   id,
   className,
+  setOpenColorPicker,
 }: CategorySelectProps) {
+  const handleCategoryChange = (category: string) => {
+    onValueChange(category);
+    if (onCategoryChange) {
+      onCategoryChange(category, getCategoryColor(category));
+    }
+  };
+
   return (
     <Autocomplete.Root
       items={CATEGORIES}
       value={value}
-      onValueChange={onValueChange}
+      onValueChange={handleCategoryChange}
       openOnInputClick
     >
       <Autocomplete.InputGroup
@@ -41,12 +49,13 @@ export function CategorySelect({
           className,
         )}
       >
-        <ColorCrescent
-          color={color}
-          onColorChange={onColorChange}
-          trigger={<CategoryDot color={color} className="size-3" />}
-        />
-
+        <button
+          type="button"
+          onClick={setOpenColorPicker}
+          className="flex h-10 cursor-pointer items-center rounded-[10px] pl-1.5 font-mono text-sm"
+        >
+          <CategoryDot color={color} />
+        </button>
         <Autocomplete.Input
           id={id}
           autoComplete="off"
@@ -81,7 +90,7 @@ export function CategorySelect({
                   value={c}
                   className={cn(
                     "flex h-10 cursor-pointer items-center gap-2.5 rounded-[10px] px-2.5 font-mono text-sm text-lilac outline-none select-none",
-                    "data-highlighted:bg-accent/16 data-selected:text-fg",
+                    "data-highlighted:bg-accent/16 data-selected:text-fg hover:bg-accent/8",
                   )}
                 >
                   <CategoryDot color={Colors[index % Colors.length]} />
