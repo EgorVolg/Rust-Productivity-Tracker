@@ -2,7 +2,6 @@ import {
   AddCycleDialog,
   Background,
   CategoriesCard,
-  CycleLengthCard,
   EmptyState,
   EnergyCard,
   FilterBar,
@@ -17,7 +16,19 @@ import {
 import { PreviewState } from "./lib/view";
 import * as demoData from "./data/demo";
 import { useState } from "react";
-import { useJournal, useToast, useCycleManager } from "./lib";
+import {
+  useJournal,
+  useToast,
+  useCycleManager,
+  calculateSummary,
+  calculateCategoryStats,
+  calculateLengthStats,
+  calculateEnergyStats,
+  calculateHeatmapMatrix,
+  calculateBestDayAndHour,
+  calculateMorningBlock,
+  calculateTopWords,
+} from "./lib";
 
 const preview: PreviewState = { panel: null, empty: false, heatTooltip: null };
 
@@ -32,6 +43,28 @@ export default function App() {
 
   const [showAllCycles, setShowAllCycles] = useState(false);
   const [showRowMenu, setRowMenu] = useState<string | null>(null);
+
+  // Вычисляем статистику из реальных данных
+  const summary = journal ? calculateSummary(journal.cycles) : null;
+  const categories = journal ? calculateCategoryStats(journal.cycles) : [];
+  const cycleLength = journal
+    ? calculateLengthStats(journal.cycles)
+    : { min: 0, max: 0, avg: 0 };
+  const energy = journal
+    ? calculateEnergyStats(journal.cycles)
+    : { avg: 0, median: 0, distribution: [0, 0, 0, 0, 0] };
+  const heatmapMatrix = journal
+    ? calculateHeatmapMatrix(journal.cycles)
+    : demoData.heatmap;
+  const { bestDay, bestHour } = journal
+    ? calculateBestDayAndHour(heatmapMatrix)
+    : { bestDay: demoData.bestDay, bestHour: demoData.bestHour };
+  const morning = journal
+    ? calculateMorningBlock(journal.cycles)
+    : demoData.morning;
+  const topWords = journal
+    ? calculateTopWords(journal.cycles, demoData.filters.top)
+    : demoData.topWords;
 
   if (loading && !journal) return <div>Загрузка...</div>;
   if (error && !journal) return <div>Ошибка: {error}</div>;
@@ -55,32 +88,30 @@ export default function App() {
         <main className="flex flex-col gap-6">
           <SummaryCards
             journal={journal}
-            summary={preview.empty ? null : demoData.summary}
+            summary={preview.empty ? null : summary}
+            categories={categories}
           />
 
           {preview.empty ? (
             <EmptyState />
           ) : (
             <>
-              <div className="grid grid-cols-3 gap-5">
-                <CategoriesCard stats={demoData.categories} />
-                <CycleLengthCard stat={demoData.cycleLength} />
-                <EnergyCard stat={demoData.energy} />
-              </div>
+              {/* <div className="grid grid-cols-3 gap-5">
+                <CategoriesCard stats={categories} />
+                <CycleLengthCard stat={cycleLength} />
+                <EnergyCard stat={energy} />
+              </div> */}
 
               <Heatmap
-                matrix={demoData.heatmap}
-                bestDay={demoData.bestDay}
-                bestHour={demoData.bestHour}
+                matrix={heatmapMatrix}
+                bestDay={bestDay}
+                bestHour={bestHour}
                 tooltip={preview.heatTooltip}
               />
 
               <div className="grid grid-cols-2 gap-5">
-                <MorningBlock minutesByDay={demoData.morning} />
-                <TopWords
-                  words={demoData.topWords}
-                  top={demoData.filters.top}
-                />
+                <MorningBlock minutesByDay={morning} />
+                <TopWords words={topWords} top={demoData.filters.top} />
               </div>
 
               <RecentCycles

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { cn, Colors, getCategoryColor } from "@/lib";
+import { cn, Colors } from "@/lib";
 import { HOURS, pad2, truncate } from "@/lib";
 import type { CycleDraft } from "@/lib";
 import {
@@ -254,7 +254,7 @@ export function AddCycleDialog({
               setOpenColorPicker={handleCloseColorPicker}
               value={formState.category}
               onValueChange={(category) => setField("category", category)}
-              onCategoryChange={(category, categoryColor) => setColor(categoryColor)}
+              onCategoryChange={(_category, categoryColor) => setColor(categoryColor)}
               invalid={Boolean(errors.category)}
               aria-describedby={errors.category ? "ad-cat-err" : undefined}
             />
