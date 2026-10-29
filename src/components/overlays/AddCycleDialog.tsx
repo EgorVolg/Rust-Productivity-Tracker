@@ -1,7 +1,5 @@
 import { useState } from "react";
-import { cn, Colors } from "@/lib";
-import { HOURS, pad2, truncate } from "@/lib";
-import type { CycleDraft } from "@/lib";
+import { cn, Colors, HOURS, pad2, truncate, type CycleDraft, api, CycleInput } from "../../lib";
 import {
   Button,
   CategoryDot,
@@ -16,7 +14,6 @@ import {
   ToggleChip,
   TopicInput,
 } from "../ui";
-import { api, CycleInput } from "@/lib";
 import {
   MINUTE_PRESETS,
   ENERGY,
@@ -144,7 +141,7 @@ export function AddCycleDialog({
   }
 
   function handleCloseColorPicker() {
-    setOpenColorPicker(!openColorPicker);
+    setOpenColorPicker(true);
   }
 
   return (
@@ -293,7 +290,7 @@ export function AddCycleDialog({
             {suggestions.length > 0 && (
               <div className="flex flex-wrap items-center gap-1.5">
                 <FieldHint>Недавние:</FieldHint>
-                {suggestions.map((t) => (
+                {suggestions.slice(-5).map((t) => (
                   <button
                     key={t}
                     type="button"
