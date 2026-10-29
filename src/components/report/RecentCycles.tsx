@@ -21,9 +21,7 @@ interface RecentCyclesProps {
   total: number;
   setShowAll: (v: boolean) => void;
   showAll: boolean;
-  /** открыть диалог в режиме «добавить» */
   setOpenAddCycle: () => void;
-  /** id цикла с открытым меню — id, а не индекс */
   showRowMenu: string | null;
   setRowMenu: (v: string | null) => void;
   handleCopyCycle: (id: string) => void;
@@ -47,7 +45,7 @@ export function RecentCycles({
   const cyclesData = showAll
     ? [...cycles].reverse()
     : [...cycles].slice(-5).reverse();
-  console.log(cyclesData);
+
   return (
     <Card
       aria-labelledby="h-last"
@@ -154,7 +152,6 @@ export function RecentCycles({
                     cycle={c}
                     placement={opensUp ? "up" : "down"}
                     onClose={() => setRowMenu(null)}
-                    setAddOrEdit={handleEditCycle}
                     setOpenAddCycle={setOpenAddCycle}
                     onDeleteCycle={handleDeleteCycle}
                     onCopyCycle={handleCopyCycle}
