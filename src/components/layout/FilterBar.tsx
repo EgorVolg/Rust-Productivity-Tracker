@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useEffect } from "react";
 import type { ReactNode } from "react";
 import { cn } from "../../lib/cn";
 import { plural } from "../../lib/format";
-import { Colors, type Filters } from "../../lib/types";
+import { type Filters } from "../../lib/types";
 import type { PanelId } from "../../lib/view";
 import { CategoryPopover, PeriodPopover, TopWordsPopover } from "../overlays";
 import {
@@ -17,18 +17,29 @@ interface FilterBarProps {
   filters: Filters;
   counts: Record<Filters["category"], number>;
   total: number;
+  totalCycles: number;
   presets: { label: string; active: boolean }[];
   openPanel: PanelId;
+  onCategoryChange: (category: string) => void;
+  onPeriodChange: (from: string, to: string) => void;
+  onTopChange: (top: number) => void;
+  onReset: () => void;
+  onPanelToggle: (panel: PanelId) => void;
 }
 
 export function FilterBar({
   filters,
   counts,
   total,
+  totalCycles,
   presets,
   openPanel,
+  onCategoryChange,
+  onPeriodChange,
+  onTopChange,
+  onReset,
+  onPanelToggle,
 }: FilterBarProps) {
-  const [categoryColor, setCategoryColor] = useState(Colors[0]);
   const periodActive = filters.from !== "" || filters.to !== "";
   const anyFilter =
     filters.category !== "all" || periodActive || filters.top !== 10;
@@ -39,6 +50,35 @@ export function FilterBar({
       : filters.from
         ? `с ${filters.from}`
         : `по ${filters.to}`;
+
+  // Закрываем popover при клике вне и по Escape
+  useEffect(() => {
+    if (!openPanel) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      const isPopover = target.closest(".panel");
+      const isFilterButton = target.closest("[data-filter-button]");
+
+      if (!isPopover && !isFilterButton) {
+        onPanelToggle(null);
+      }
+    };
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onPanelToggle(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [openPanel, onPanelToggle]);
 
   return (
     <section
@@ -56,12 +96,16 @@ export function FilterBar({
           value={filters.category === "all" ? "Все" : filters.category}
           active={filters.category !== "all"}
           open={openPanel === "category"}
+          onToggle={() =>
+            onPanelToggle(openPanel === "category" ? null : "category")
+          }
           popover={
             <CategoryPopover
               selected={filters.category}
               counts={counts}
-              color={categoryColor}
-              onColorChange={setCategoryColor}
+              onCategoryChange={onCategoryChange}
+              isOpen={openPanel === "category"}
+              onClose={() => onPanelToggle(null)}
             />
           }
         />
@@ -71,12 +115,18 @@ export function FilterBar({
           value={periodLabel}
           active={periodActive}
           open={openPanel === "period"}
+          onToggle={() =>
+            onPanelToggle(openPanel === "period" ? null : "period")
+          }
           popover={
             <PeriodPopover
-              from={filters.from || "2026-10-07"}
-              to={filters.to || "2026-10-20"}
+              from={filters.from}
+              to={filters.to}
               presets={presets}
-              hint="Формат ГГГГ-ММ-ДД · в периоде 36 циклов"
+              hint={`Формат ГГГГ-ММ-ДД · в периоде ${total} ${plural(total, "цикл", "цикла", "циклов")}`}
+              onPeriodChange={onPeriodChange}
+              isOpen={openPanel === "period"}
+              onClose={() => onPanelToggle(null)}
             />
           }
         />
@@ -85,17 +135,24 @@ export function FilterBar({
           value={String(filters.top)}
           active={filters.top !== 10}
           open={openPanel === "top"}
-          popover={<TopWordsPopover value={filters.top} />}
+          onToggle={() => onPanelToggle(openPanel === "top" ? null : "top")}
+          popover={
+            <TopWordsPopover
+              value={filters.top}
+              onTopChange={onTopChange}
+              isOpen={openPanel === "top"}
+              onClose={() => onPanelToggle(null)}
+            />
+          }
         />
       </div>
 
       <div className="flex items-center gap-3.5">
         <span className="text-[13px] font-medium text-muted">
-          Показано {"NaN"} из {total}
-          {plural(total, "цикла", "циклов", "циклов")}
+          {`Показано ${total} из ${totalCycles} ${plural(totalCycles, "цикла", "циклов", "циклов")}`}
         </span>
         {anyFilter && (
-          <Button variant="ghost" className="px-3.5">
+          <Button variant="ghost" className="px-3.5" onClick={onReset}>
             <IconX className="size-3.5" />
             Сбросить
           </Button>
@@ -111,6 +168,7 @@ interface FilterButtonProps {
   value: string;
   active: boolean;
   open: boolean;
+  onToggle: () => void;
   popover: ReactNode;
 }
 
@@ -120,14 +178,17 @@ function FilterButton({
   value,
   active,
   open,
+  onToggle,
   popover,
 }: FilterButtonProps) {
   return (
     <div className="relative">
       <button
         type="button"
+        data-filter-button
         aria-haspopup="dialog"
         aria-expanded={open}
+        onClick={onToggle}
         className={cn(
           "flex h-11 items-center gap-2 rounded-[14px] border px-3.5 text-sm font-medium text-fg",
           open

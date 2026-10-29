@@ -15,7 +15,7 @@ import {
 } from "./components";
 import { PreviewState } from "./lib/view";
 import * as demoData from "./data/demo";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   useJournal,
   useToast,
@@ -28,12 +28,17 @@ import {
   calculateBestDayAndHour,
   calculateMorningBlock,
   calculateTopWords,
+  DEFAULT_FILTERS,
+  CATEGORIES,
+  type Filters,
+  type PanelId,
 } from "./lib";
 
 const preview: PreviewState = { panel: null, empty: false, heatTooltip: null };
 
 export default function App() {
-  const { journal, loading, error, loadJournal } = useJournal();
+  const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
+  const { journal, loading, error, loadJournal } = useJournal(filters);
   const toast = useToast();
   const cycles = useCycleManager({
     journal,
@@ -44,7 +49,41 @@ export default function App() {
   const [showAllCycles, setShowAllCycles] = useState(false);
   const [showRowMenu, setRowMenu] = useState<string | null>(null);
 
-  // Вычисляем статистику из реальных данных
+  const [openPanel, setOpenPanel] = useState<PanelId>(null);
+
+  // Вычисляем количество циклов по категориям (для счётчиков в фильтре)
+  const categoryCounts = useMemo(() => {
+    if (!journal) return { all: 0 };
+    const counts: Record<string, number> = { all: journal.cycles.length };
+    // Инициализируем все категории с 0
+    CATEGORIES.forEach((cat) => {
+      counts[cat] = 0;
+    });
+    // Считаем реальные циклы
+    journal.cycles.forEach((cycle) => {
+      counts[cycle.category] = (counts[cycle.category] || 0) + 1;
+    });
+    return counts;
+  }, [journal]);
+
+  // Пресеты периода
+  const periodPresets = useMemo(() => {
+    if (!journal) return demoData.periodPresets;
+    const dates = journal.cycles.map((c) => c.date).sort();
+    if (dates.length === 0) return demoData.periodPresets;
+
+    const latest = dates[dates.length - 1];
+    const earliest = dates[0];
+
+    return [
+      { label: "7 дней", active: false },
+      { label: "14 дней", active: false },
+      { label: "Октябрь", active: false },
+      { label: "Всё время", active: true },
+    ];
+  }, [journal]);
+
+  // Вычисляем статистику из данных (без фильтрации - фильтрация будет на Rust)
   const summary = journal ? calculateSummary(journal.cycles) : null;
   const categories = journal ? calculateCategoryStats(journal.cycles) : [];
   const cycleLength = journal
@@ -63,8 +102,29 @@ export default function App() {
     ? calculateMorningBlock(journal.cycles)
     : demoData.morning;
   const topWords = journal
-    ? calculateTopWords(journal.cycles, demoData.filters.top)
+    ? calculateTopWords(journal.cycles, filters.top)
     : demoData.topWords;
+
+  // Обработчики для фильтров
+  const handleCategoryChange = (category: string) => {
+    setFilters((prev) => ({ ...prev, category }));
+  };
+
+  const handlePeriodChange = (from: string, to: string) => {
+    setFilters((prev) => ({ ...prev, from, to }));
+  };
+
+  const handleTopChange = (top: number) => {
+    setFilters((prev) => ({ ...prev, top }));
+  };
+
+  const handleResetFilters = () => {
+    setFilters(DEFAULT_FILTERS);
+  };
+
+  const handlePanelToggle = (panel: PanelId) => {
+    setOpenPanel(openPanel === panel ? null : panel);
+  };
 
   if (loading && !journal) return <div>Загрузка...</div>;
   if (error && !journal) return <div>Ошибка: {error}</div>;
@@ -78,11 +138,17 @@ export default function App() {
         <TopBar setOpenAddCycle={cycles.openAdd} />
 
         <FilterBar
-          filters={demoData.filters}
-          counts={demoData.categoryCounts}
-          total={journal.lineCount}
-          presets={demoData.periodPresets}
-          openPanel={preview.panel}
+          filters={filters}
+          counts={categoryCounts}
+          total={journal.cycles.length}
+          totalCycles={journal.totalCycles}
+          presets={periodPresets}
+          openPanel={openPanel}
+          onCategoryChange={handleCategoryChange}
+          onPeriodChange={handlePeriodChange}
+          onTopChange={handleTopChange}
+          onReset={handleResetFilters}
+          onPanelToggle={handlePanelToggle}
         />
 
         <main className="flex flex-col gap-6">
