@@ -1,42 +1,31 @@
 import type { ReactNode } from "react";
-import { useEffect, useRef } from "react";
 import { cn } from "../../lib/cn";
 import { IconCopy, IconPencil, IconTrash } from "../ui";
 import type { Cycle } from "../../lib/types";
+import { useClickOutside } from "../../lib/hooks";
+
+interface RowMenuProps {
+  id: string;
+  cycle: Cycle;
+  placement?: "down" | "up";
+  onClose: () => void;
+  setOpenAddCycle: (value: boolean) => void;
+  onDeleteCycle: (id: string) => void;
+  onCopyCycle: (id: string) => void;
+  onEditCycle: (cycle: Cycle) => void;
+}
 
 export function RowMenu({
   id,
   cycle,
   placement = "down",
   onClose,
-  setAddOrEdit,
   setOpenAddCycle,
   onDeleteCycle,
   onCopyCycle,
   onEditCycle,
-}: {
-  id: string;
-  cycle: Cycle;
-  placement?: "down" | "up";
-  onClose: () => void;
-  setAddOrEdit: (cycle: Cycle) => void;
-  setOpenAddCycle: (value: boolean) => void;
-  onDeleteCycle: (id: string) => void;
-  onCopyCycle: (id: string) => void;
-  onEditCycle: (cycle: Cycle) => void;
-}) {
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        onClose();
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [onClose]);
+}: RowMenuProps) {
+  const menuRef = useClickOutside(onClose);
 
   return (
     <div
@@ -51,7 +40,6 @@ export function RowMenu({
       <MenuItem
         icon={<IconPencil className="size-4 text-soft" />}
         onClick={() => {
-          setAddOrEdit(cycle);
           onEditCycle(cycle);
           setOpenAddCycle(true);
         }}
@@ -76,17 +64,19 @@ export function RowMenu({
   );
 }
 
+interface MenuItemProps {
+  icon: ReactNode;
+  danger?: boolean;
+  children: ReactNode;
+  onClick: () => void;
+}
+
 function MenuItem({
   icon,
   danger = false,
   children,
   onClick,
-}: {
-  icon: ReactNode;
-  danger?: boolean;
-  children: ReactNode;
-  onClick: () => void;
-}) {
+}: MenuItemProps) {
   return (
     <button
       type="button"
