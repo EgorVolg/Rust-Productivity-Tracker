@@ -55,6 +55,12 @@ pub fn write_to_journal(path: &Path, cycle_form: &CycleInput) -> Result<(), Stri
 
         if needs_update {
             let updated_content = updated_lines.join("\n");
+            // Ensure the file ends with a newline
+            let updated_content = if updated_content.ends_with('\n') {
+                updated_content
+            } else {
+                updated_content + "\n"
+            };
             std::fs::write(path, updated_content)
                 .map_err(|e| format!("Не удалось обновить файл: {e}"))?;
         }
@@ -70,16 +76,24 @@ pub fn write_to_journal(path: &Path, cycle_form: &CycleInput) -> Result<(), Stri
         .open(path)
         .map_err(|e| format!("Не удалось открыть файл: {e}"))?;
 
-    let is_empty = file
+    let metadata = file
         .metadata()
-        .map_err(|e| format!("Не удалось прочитать файл: {e}"))?
-        .len()
-        == 0;
+        .map_err(|e| format!("Не удалось прочитать файл: {e}"))?;
+    let is_empty = metadata.len() == 0;
+
     if is_empty {
         std::io::Write::write_all(&mut file, HEADER.as_bytes())
             .map_err(|e| format!("Не удалось записать заголовок: {e}"))?;
         std::io::Write::write_all(&mut file, b"\n")
             .map_err(|e| format!("Не удалось записать заголовок: {e}"))?;
+    } else {
+        // Ensure the file ends with a newline before appending
+        let content = std::fs::read_to_string(path)
+            .map_err(|e| format!("Не удалось прочитать файл: {e}"))?;
+        if !content.ends_with('\n') {
+            std::io::Write::write_all(&mut file, b"\n")
+                .map_err(|e| format!("Не удалось записать перенос строки: {e}"))?;
+        }
     }
 
     std::io::Write::write_all(

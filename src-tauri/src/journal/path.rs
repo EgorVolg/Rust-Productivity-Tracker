@@ -46,6 +46,11 @@ pub fn ensure_migrated(path: &Path) -> Result<(), String> {
         out.push('\n');
     }
 
+    // Ensure the file ends with a newline
+    if !out.ends_with('\n') {
+        out.push('\n');
+    }
+
     std::fs::write(path, out).map_err(|e| format!("Не удалось мигрировать файл: {e}"))?;
     println!("[journal] миграция: добавлена колонка id");
     Ok(())
