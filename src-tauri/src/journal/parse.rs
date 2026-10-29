@@ -100,10 +100,13 @@ pub fn parse_journal(content: &str) -> ParseResult {
         }
     }
 
+    let total_cycles = cycles.len();
+
     ParseResult {
         cycles,
         errors,
         line_count,
         streak_days: 0,
+        total_cycles,
     }
 }
