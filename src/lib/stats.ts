@@ -5,7 +5,11 @@ import type { CategoryStat, EnergyStat, LengthStat, Summary, WordStat } from './
 const WORD_REGEX = /[^\p{L}\p{N}\s]/gu;
 const WORD_SPLIT_REGEX = /\s+/;
 
-/** Вычислить сводную статистику из циклов */
+/**
+ * Вычисляет сводную статистику из циклов
+ * @param cycles - массив циклов
+ * @returns объект с общим количеством циклов, общим временем, количеством дней и средним временем в день
+ */
 export function calculateSummary(cycles: Cycle[]): Summary {
   const totalMinutes = cycles.reduce((sum, c) => sum + c.minutes, 0);
 
@@ -21,7 +25,11 @@ export function calculateSummary(cycles: Cycle[]): Summary {
   };
 }
 
-/** Вычислить статистику по категориям */
+/**
+ * Вычисляет статистику по категориям
+ * @param cycles - массив циклов
+ * @returns массив статистики по каждой категории (количество циклов, время, доля в процентах)
+ */
 export function calculateCategoryStats(cycles: Cycle[]): CategoryStat[] {
   const categoryMap = new Map<string, { cycles: number; minutes: number }>();
 
@@ -43,7 +51,11 @@ export function calculateCategoryStats(cycles: Cycle[]): CategoryStat[] {
   }));
 }
 
-/** Вычислить статистику длины цикла */
+/**
+ * Вычисляет статистику длины цикла
+ * @param cycles - массив циклов
+ * @returns объект с минимальной, максимальной и средней длительностью цикла в минутах
+ */
 export function calculateLengthStats(cycles: Cycle[]): LengthStat {
   if (cycles.length === 0) {
     return { min: 0, max: 0, avg: 0 };
@@ -57,7 +69,11 @@ export function calculateLengthStats(cycles: Cycle[]): LengthStat {
   return { min, max, avg };
 }
 
-/** Вычислить статистику энергии */
+/**
+ * Вычисляет статистику энергии
+ * @param cycles - массив циклов
+ * @returns объект со средней энергией, медианой и распределением по оценкам 1-5
+ */
 export function calculateEnergyStats(cycles: Cycle[]): EnergyStat {
   if (cycles.length === 0) {
     return { avg: 0, median: 0, distribution: [0, 0, 0, 0, 0] };
@@ -84,8 +100,11 @@ export function calculateEnergyStats(cycles: Cycle[]): EnergyStat {
   return { avg, median, distribution };
 }
 
-/** Вычислить матрицу тепловой карты 7×24 (дни недели × часы)
+/**
+ * Вычисляет матрицу тепловой карты 7×24 (дни недели × часы)
  * Одна ячейка = 60 минут. Если цикл длится 90 мин, закрашиваем полторы ячейки.
+ * @param cycles - массив циклов
+ * @returns матрица 7x24 с суммой минут для каждого дня недели и часа
  */
 export function calculateHeatmapMatrix(cycles: Cycle[]): number[][] {
   const matrix: number[][] = Array(7)
@@ -111,7 +130,11 @@ export function calculateHeatmapMatrix(cycles: Cycle[]): number[][] {
   return matrix;
 }
 
-/** Вычислить лучший день и час */
+/**
+ * Вычисляет лучший день и час по активности
+ * @param matrix - матрица тепловой карты 7x24
+ * @returns объект с лучшим днем недели и лучшим часом
+ */
 export function calculateBestDayAndHour(matrix: number[][]): {
   bestDay: { day: number; minutes: number };
   bestHour: { hour: number; minutes: number };
@@ -138,7 +161,11 @@ export function calculateBestDayAndHour(matrix: number[][]): {
   return { bestDay, bestHour };
 }
 
-/** Вычислить утренний блок: минуты с 06:00 до 12:00 по дням недели */
+/**
+ * Вычисляет утренний блок: минуты с 06:00 до 12:00 по дням недели
+ * @param cycles - массив циклов
+ * @returns массив из 7 элементов (Пн-Вс) с суммой минут в утренний блок
+ */
 export function calculateMorningBlock(cycles: Cycle[]): number[] {
   const morningMinutes = [0, 0, 0, 0, 0, 0, 0]; // 7 дней
 
@@ -153,7 +180,13 @@ export function calculateMorningBlock(cycles: Cycle[]): number[] {
   return morningMinutes;
 }
 
-/** Вычислить топ-N слов в темах */
+/**
+ * Вычисляет топ-N слов в темах циклов
+ * Слова длиной менее 3 символов игнорируются, знаки препинания удаляются
+ * @param cycles - массив циклов
+ * @param top - количество слов для возвращения
+ * @returns массив топ-N слов с их частотой
+ */
 export function calculateTopWords(cycles: Cycle[], top: number): WordStat[] {
   const wordMap = new Map<string, number>();
 

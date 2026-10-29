@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+/**
+ * Хук для отображения toast-уведомлений с автоскрыванием
+ * @param duration - время отображения в миллисекундах (по умолчанию 1500)
+ * @returns объект с текущим сообщением и методами show/hide
+ */
 export function useToast(duration = 1500) {
     const [message, setMessage] = useState<string | null>(null);
     const timerRef = useRef<number | null>(null);

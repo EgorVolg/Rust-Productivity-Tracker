@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import { Cycle } from "../types";
 import { api, CycleInput } from "../api";
 
+/**
+ * Создает пустую форму для нового цикла с текущими датой и временем
+ * @returns объект CycleInput с дефолтными значениями
+ */
 function emptyForm(): CycleInput {
     const now = new Date();
     return {
@@ -15,6 +19,11 @@ function emptyForm(): CycleInput {
     };
 }
 
+/**
+ * Создает форму на основе последнего цикла (для копирования)
+ * @param last - последний цикл для копирования
+ * @returns объект CycleInput с данными из последнего цикла
+ */
 function fromLastCycle(last: Cycle): CycleInput {
     const now = new Date();
     return {
@@ -34,6 +43,12 @@ interface CycleManagerArgs {
   notify: (msg: string) => void;
 }
 
+/**
+ * Хук для управления циклами (добавление, редактирование, удаление, копирование)
+ * Автоматически префиллит форму на основе последнего цикла
+ * @param args - параметры хука (журнал, функция перезагрузки, функция уведомлений)
+ * @returns объект с методами и состоянием для управления циклами
+ */
 export function useCycleManager({ journal, reload, notify }: CycleManagerArgs) {
     const [formData, setFormData] = useState<CycleInput>(emptyForm);
     const [userEdited, setUserEdited] = useState(false);

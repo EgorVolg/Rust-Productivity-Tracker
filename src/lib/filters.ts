@@ -3,6 +3,8 @@ import { CATEGORIES, DEFAULT_FILTERS, type Filters, type Cycle } from "./types";
 
 /**
  * Проверяет, есть ли активные фильтры
+ * @param filters - объект фильтров
+ * @returns true, если хотя бы один фильтр отличается от значения по умолчанию
  */
 export function hasActiveFilters(filters: Filters): boolean {
   return (
@@ -15,6 +17,8 @@ export function hasActiveFilters(filters: Filters): boolean {
 
 /**
  * Вычисляет количество циклов по категориям для счётчиков в фильтре
+ * @param cycles - массив циклов или null
+ * @returns объект с количеством циклов для каждой категории и общего количества
  */
 export function useCategoryCounts(cycles: Cycle[] | null) {
   return useMemo(() => {
@@ -34,6 +38,9 @@ export function useCategoryCounts(cycles: Cycle[] | null) {
 
 /**
  * Создаёт пресеты периодов на основе данных журнала
+ * Включает пресеты: 7 дней, 14 дней, текущий месяц, всё время
+ * @param cycles - массив циклов или null
+ * @returns массив пресетов с названиями и статусом активности
  */
 export function usePeriodPresets(cycles: Cycle[] | null) {
   return useMemo(() => {
@@ -56,7 +63,10 @@ export function usePeriodPresets(cycles: Cycle[] | null) {
 }
 
 /**
- * Создаёт обработчики для фильтров
+ * Создаёт обработчики для изменения фильтров
+ * @param setFilters - функция для обновления состояния фильтров
+ * @param defaultFilters - фильтры по умолчанию для сброса
+ * @returns объект с функциями-обработчиками для каждого типа фильтра
  */
 export function useFilterHandlers(
   setFilters: React.Dispatch<React.SetStateAction<Filters>>,

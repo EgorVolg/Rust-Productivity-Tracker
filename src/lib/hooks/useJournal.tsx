@@ -3,6 +3,12 @@ import { DEFAULT_FILTERS, Filters, ParseResult } from "../types";
 import { api } from "../api";
 import { hasActiveFilters } from "../filters";
 
+/**
+ * Хук для загрузки и управления журналом циклов
+ * Автоматически перезагружает данные при изменении фильтров
+ * @param filters - текущие фильтры для выборки данных
+ * @returns объект с данными журнала, состоянием загрузки и функцией перезагрузки
+ */
 export function useJournal(filters: Filters = DEFAULT_FILTERS) {
   const [journal, setJournal] = useState<ParseResult | null>(null);
   const [loading, setLoading] = useState(false);
