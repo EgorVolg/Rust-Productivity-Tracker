@@ -1,6 +1,10 @@
 import type { Cycle } from './types';
 import type { CategoryStat, EnergyStat, LengthStat, Summary, WordStat } from './view';
 
+// Компилируем regex один раз для производительности
+const WORD_REGEX = /[^\p{L}\p{N}\s]/gu;
+const WORD_SPLIT_REGEX = /\s+/;
+
 /** Вычислить сводную статистику из циклов */
 export function calculateSummary(cycles: Cycle[]): Summary {
   const totalMinutes = cycles.reduce((sum, c) => sum + c.minutes, 0);
@@ -157,8 +161,8 @@ export function calculateTopWords(cycles: Cycle[], top: number): WordStat[] {
     // Разбиваем тему на слова, игнорируя знаки препинания
     const words = cycle.topic
       .toLowerCase()
-      .replace(/[^\p{L}\p{N}\s]/gu, ' ') // оставляем только буквы, цифры и пробелы
-      .split(/\s+/)
+      .replace(WORD_REGEX, ' ') // оставляем только буквы, цифры и пробелы
+      .split(WORD_SPLIT_REGEX)
       .filter(word => word.length >= 3); // только слова от 3 символов
 
     words.forEach(word => {

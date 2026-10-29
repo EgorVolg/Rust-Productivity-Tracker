@@ -11,12 +11,8 @@ export interface CycleInput {
   energy: number;
 }
 
-export interface Journal {
-  cycles: CycleInput[];
-  lineCount: number;
-  streakDays: number;
-  totalCycles: number;
-}
+// Journal - это псевдоним для ParseResult для обратной совместимости
+export type Journal = ParseResult;
 
 export const api = {
   addCycle: (cycleForm: CycleInput) =>

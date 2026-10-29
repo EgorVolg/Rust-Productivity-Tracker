@@ -11,14 +11,13 @@ import {
   TopBar,
   TopWords,
 } from "./components";
-import { PreviewState } from "./lib/view";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   useJournal,
   useToast,
   useCycleManager,
   calculateSummary,
-  calculateCategoryStats, 
+  calculateCategoryStats,
   calculateHeatmapMatrix,
   calculateBestDayAndHour,
   calculateMorningBlock,
@@ -30,8 +29,6 @@ import {
   type Filters,
   type PanelId,
 } from "./lib";
-
-const preview: PreviewState = { panel: null, empty: false, heatTooltip: null };
 
 export default function App() {
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
@@ -57,18 +54,19 @@ export default function App() {
   // Обработчики для фильтров
   const filterHandlers = useFilterHandlers(setFilters, DEFAULT_FILTERS);
 
+  // Вычисляем статистику из данных (без фильтрации - фильтрация будет на Rust)
+  // Мемоизируем вычисления для оптимизации производительности
+  const summary = useMemo(() => journal ? calculateSummary(journal.cycles) : null, [journal]);
+  const categories = useMemo(() => journal ? calculateCategoryStats(journal.cycles) : [], [journal]);
+  const heatmapMatrix = useMemo(() => journal ? calculateHeatmapMatrix(journal.cycles) : Array(7).fill(null).map(() => Array(24).fill(0)), [journal]);
+  const { bestDay, bestHour } = useMemo(() => calculateBestDayAndHour(heatmapMatrix), [heatmapMatrix]);
+  const morning = useMemo(() => journal ? calculateMorningBlock(journal.cycles) : [0, 0, 0, 0, 0, 0, 0], [journal]);
+  const topWords = useMemo(() => journal ? calculateTopWords(journal.cycles, filters.top) : [], [journal, filters.top]);
+  const suggestions = useMemo(() => journal ? Array.from(new Set(journal.cycles.map((c) => c.topic))) : [], [journal]);
+
   if (loading && !journal) return <div>Загрузка...</div>;
   if (error && !journal) return <div>Ошибка: {error}</div>;
   if (!journal || journal.totalCycles == 0) return <EmptyState />;
-
-  // Вычисляем статистику из данных (без фильтрации - фильтрация будет на Rust)
-  const summary = calculateSummary(journal.cycles);
-  const categories = calculateCategoryStats(journal.cycles);
-
-  const heatmapMatrix = calculateHeatmapMatrix(journal.cycles);
-  const { bestDay, bestHour } = calculateBestDayAndHour(heatmapMatrix);
-  const morning = calculateMorningBlock(journal.cycles);
-  const topWords = calculateTopWords(journal.cycles, filters.top);
 
   const handlePanelToggle = (panel: PanelId) => {
     setOpenPanel(openPanel === panel ? null : panel);
@@ -98,21 +96,14 @@ export default function App() {
         <main className="flex flex-col gap-6">
           <SummaryCards
             journal={journal}
-            summary={preview.empty ? null : summary}
+            summary={summary}
             categories={categories}
           />
-
-          {/* <div className="grid grid-cols-3 gap-5">
-                <CategoriesCard stats={categories} />
-                <CycleLengthCard stat={cycleLength} />
-                <EnergyCard stat={energy} />
-              </div> */}
 
           <Heatmap
             matrix={heatmapMatrix}
             bestDay={bestDay}
             bestHour={bestHour}
-            tooltip={preview.heatTooltip}
           />
 
           <div className="grid grid-cols-2 gap-5">
@@ -139,7 +130,7 @@ export default function App() {
         key={cycles.version}
         addOrEdit={cycles.mode}
         editingCycleId={cycles.editingId}
-        suggestions={journal.cycles.map(c => c.topic)}
+        suggestions={suggestions}
         formData={cycles.formData}
         open={cycles.open}
         onOpenChange={(v) => {

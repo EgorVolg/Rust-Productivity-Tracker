@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { cn } from "../../lib/cn";
+import { pad2 } from "../../lib/format";
 import { Button, FieldLabel, Popover, TextInput, ToggleChip } from "../ui";
 
 interface PeriodPopoverProps {
@@ -14,6 +15,15 @@ interface PeriodPopoverProps {
 }
 
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Получает название текущего месяца на русском */
+function getCurrentMonthRange(): [string, string] {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const lastDay = new Date(year, now.getMonth() + 1, 0).getDate();
+  return [`${year}-${month}-01`, `${year}-${month}-${pad2(lastDay)}`];
+}
 
 /** Проверяет формат и реальное существование даты (2026-02-31 → false) */
 function isValidDate(date: string): boolean {
@@ -116,11 +126,12 @@ export function PeriodPopover({
       case "14 дней":
         range = lastNDays(14);
         break;
-      case "Октябрь":
-        range = ["2026-10-01", "2026-10-31"];
-        break;
       case "Всё время":
         range = ["", ""];
+        break;
+      default:
+        // Текущий месяц
+        range = getCurrentMonthRange();
         break;
     }
 
