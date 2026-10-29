@@ -1,13 +1,13 @@
 import { Autocomplete } from "@base-ui/react/autocomplete";
 import { cn } from "../../lib/cn";
-import { CATEGORIES, Colors, getCategoryColor, type CategoryStat } from "../../lib";
+import { CATEGORIES, Colors, getCategoryColor } from "../../lib";
 import { CategoryDot } from "./Display";
 import { IconCheck, IconChevronDown } from "./icons";
 
 interface CategorySelectProps {
-  value: CategoryStat["category"];
-  onValueChange: (value: CategoryStat["category"]) => void;
-  onCategoryChange?: (category: CategoryStat["category"], color: string) => void;
+  value: string;
+  onValueChange: (value: string) => void;
+  onCategoryChange?: (category: string, color: string) => void;
   color: string;
   id?: string;
   className?: string;

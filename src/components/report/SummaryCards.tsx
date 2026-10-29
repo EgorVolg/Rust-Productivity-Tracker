@@ -2,23 +2,24 @@ import type { ReactNode } from "react";
 import { cn } from "../../lib/cn";
 import { DASH, plural } from "../../lib/format";
 import type { Summary, CategoryStat } from "../../lib/view";
+import type { Journal } from "../../lib/types";
 import { Duration } from "../ui";
-import { CycleInput, Journal } from "@/lib";
+
+interface SummaryCardsProps {
+  journal: Journal;
+  summary: Summary | null;
+  categories: CategoryStat[];
+}
 
 export function SummaryCards({
   journal,
   summary,
   categories,
-}: {
-  journal: Journal;
-  summary: Summary | null;
-  categories: CategoryStat[];
-}) {
-  const s = summary;
-  const empty = s === null;
+}: SummaryCardsProps) {
+  const empty = summary === null;
 
   const totalTime = journal.cycles.reduce(
-    (acc: number, cycle: CycleInput) => acc + cycle.minutes,
+    (acc, cycle) => acc + cycle.minutes,
     0,
   );
 
@@ -43,8 +44,8 @@ export function SummaryCards({
       />
       <Stat
         label="Всего времени"
-        value={s ? <Duration minutes={totalTime} /> : DASH}
-        caption={s ? `${totalTime} мин` : DASH}
+        value={summary ? <Duration minutes={totalTime} /> : DASH}
+        caption={summary ? `${totalTime} мин` : DASH}
         empty={empty}
       />
       <Stat
@@ -67,17 +68,19 @@ export function SummaryCards({
   );
 }
 
+interface StatProps {
+  label: string;
+  value: ReactNode;
+  caption: string;
+  empty: boolean;
+}
+
 function Stat({
   label,
   value,
   caption,
   empty,
-}: {
-  label: string;
-  value: ReactNode;
-  caption: string;
-  empty: boolean;
-}) {
+}: StatProps) {
   return (
     <div className="glass flex flex-col gap-3.5 px-6 py-5.5">
       <span className="text-[13px] font-medium text-muted">{label}</span>

@@ -1,7 +1,6 @@
-import { useEffect, useState } from "react"; 
+import { useEffect, useState } from "react";
 import { Cycle } from "../types";
 import { api, CycleInput } from "../api";
-
 
 function emptyForm(): CycleInput {
     const now = new Date();
@@ -29,13 +28,13 @@ function fromLastCycle(last: Cycle): CycleInput {
     };
 }
 
-type Args = {
-    journal: { cycles: Cycle[] } | null;
-    reload: () => Promise<void>;
-    notify: (msg: string) => void;
-};
+interface CycleManagerArgs {
+  journal: { cycles: Cycle[] } | null;
+  reload: () => Promise<void>;
+  notify: (msg: string) => void;
+}
 
-export function useCycleManager({ journal, reload, notify }: Args) {
+export function useCycleManager({ journal, reload, notify }: CycleManagerArgs) {
     const [formData, setFormData] = useState<CycleInput>(emptyForm);
     const [userEdited, setUserEdited] = useState(false);
     const [open, setOpen] = useState(false);
