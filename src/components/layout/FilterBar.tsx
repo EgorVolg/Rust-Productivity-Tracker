@@ -4,6 +4,7 @@ import { cn } from "../../lib/cn";
 import { plural } from "../../lib/format";
 import { type Filters } from "../../lib/types";
 import type { PanelId } from "../../lib/view";
+import { hasActiveFilters } from "../../lib/filters";
 import { CategoryPopover, PeriodPopover, TopWordsPopover } from "../overlays";
 import {
   Button,
@@ -15,7 +16,7 @@ import {
 
 interface FilterBarProps {
   filters: Filters;
-  counts: Record<Filters["category"], number>;
+  counts: Record<string, number>;
   total: number;
   totalCycles: number;
   presets: { label: string; active: boolean }[];
@@ -41,8 +42,7 @@ export function FilterBar({
   onPanelToggle,
 }: FilterBarProps) {
   const periodActive = filters.from !== "" || filters.to !== "";
-  const anyFilter =
-    filters.category !== "all" || periodActive || filters.top !== 10;
+  const anyFilter = hasActiveFilters(filters);
   const periodLabel = !periodActive
     ? "Всё время"
     : filters.from && filters.to

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { DEFAULT_FILTERS, Filters, ParseResult } from "../types";
 import { api } from "../api";
+import { hasActiveFilters } from "../filters";
 
 export function useJournal(filters: Filters = DEFAULT_FILTERS) {
   const [journal, setJournal] = useState<ParseResult | null>(null);
@@ -11,14 +12,7 @@ export function useJournal(filters: Filters = DEFAULT_FILTERS) {
     setLoading(true);
     setError(null);
     try {
-      // Если есть активные фильтры, используем loadFilteredJournal
-      const hasActiveFilters =
-        filters.category !== "all" ||
-        filters.from !== "" ||
-        filters.to !== "" ||
-        filters.top !== 10;
-
-      const result = hasActiveFilters
+      const result = hasActiveFilters(filters)
         ? await api.loadFilteredJournal(filters)
         : await api.loadJournal();
 
