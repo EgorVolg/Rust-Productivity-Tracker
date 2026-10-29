@@ -1,4 +1,5 @@
 use crate::cycle::CycleInput;
+use crate::filters::Filters;
 use crate::journal::{ParseResult, journal_path, write_to_journal};
 use std::collections::HashMap;
 
@@ -23,7 +24,6 @@ pub fn add_cycle(
 #[tauri::command]
 pub fn load_journal(app: tauri::AppHandle) -> Result<ParseResult, String> {
     let path = journal_path(&app).map_err(|e| e.to_string())?;
-
     let result = crate::journal::load_journal(&path)?;
     Ok(result)
 }
@@ -40,4 +40,14 @@ pub fn edit_cycle(app: tauri::AppHandle, id: String, cycle_form: CycleInput) -> 
     let path = journal_path(&app).map_err(|e| e.to_string())?;
     crate::journal::edit_cycle(&path, id, cycle_form)?;
     Ok(())
+}
+
+#[tauri::command]
+pub fn load_filtered_journal(
+    app: tauri::AppHandle,
+    filters: Filters,
+) -> Result<ParseResult, String> {
+    let path = journal_path(&app).map_err(|e| e.to_string())?;
+    let result = crate::journal::load_filtered_journal(&path, &filters)?;
+    Ok(result)
 }

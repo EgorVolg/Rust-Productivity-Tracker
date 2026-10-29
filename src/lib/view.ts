@@ -12,8 +12,6 @@ export interface FileInfo {
 
 export interface Summary {
   cycles: number;
-  rust: number;
-  english: number;
   totalMinutes: number;
   days: number;
   avgPerDay: number;
@@ -22,8 +20,7 @@ export interface Summary {
 export interface CategoryStat {
   category: string;
   cycles: number;
-  minutes: number;
-  /** доля в процентах, без округления (§6.2) */
+  minutes: number; 
   share: number;
 }
 
@@ -53,7 +50,7 @@ export interface CycleDraft {
   category: string;
   topic: string;
   minutes: number;
-  energy: number; 
+  energy: number;
   note?: string;
   errors?: { date?: string; topic?: string; minutes?: string };
 }

@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { ParseResult } from "./types";
+import type { Filters, ParseResult } from "./types";
 
 export interface CycleInput {
   date: string;
@@ -15,12 +15,15 @@ export interface Journal {
   cycles: CycleInput[];
   lineCount: number;
   streakDays: number;
+  totalCycles: number;
 }
 
 export const api = {
   addCycle: (cycleForm: CycleInput) =>
     invoke<string>("add_cycle", { cycleForm }),
   loadJournal: () => invoke<ParseResult>("load_journal"),
+  loadFilteredJournal: (filters: Filters) =>
+    invoke<ParseResult>("load_filtered_journal", { filters }),
   deleteCycle: (id: string) => invoke<void>("delete_cycle", { id }),
   editCycle: (id: string, cycleForm: CycleInput) =>
     invoke<void>("edit_cycle", { id, cycleForm }),

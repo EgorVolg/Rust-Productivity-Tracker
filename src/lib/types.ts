@@ -53,6 +53,8 @@ export interface ParseResult {
   lineCount: number;
   /** Количество дней подряд с активностью. */
   streakDays: number;
+  /** Общее количество циклов без фильтров */
+  totalCycles: number;
 }
 
 // export interface Journal extends ParseResult {

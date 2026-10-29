@@ -1,26 +1,33 @@
 import { cn } from "../../lib/cn";
-import type { Filters } from "../../lib/types";
+import { CATEGORIES, getCategoryColor, type Filters } from "../../lib/types";
 import { CategoryDot, IconCheck, Popover } from "../ui";
 
 type CategoryFilter = Filters["category"];
 
-const OPTIONS: { key: CategoryFilter; label: string }[] = [
-  { key: "all", label: "Все категории" },
-  { key: "rust", label: "rust" },
-  { key: "english", label: "english" },
-];
-
 interface CategoryPopoverProps {
   selected: CategoryFilter;
   counts: Record<CategoryFilter, number>;
-  color: string;
+  onCategoryChange: (category: CategoryFilter) => void;
+  onClose: () => void;
 }
 
 export function CategoryPopover({
   selected,
   counts,
-  color,
+  onCategoryChange,
+  onClose,
 }: CategoryPopoverProps) {
+  // Формируем опции: "all" + все категории из CATEGORIES
+  const options = [
+    { key: "all" as const, label: "Все категории" },
+    ...CATEGORIES.map((cat) => ({ key: cat as CategoryFilter, label: cat })),
+  ];
+
+  const handleApply = (key: CategoryFilter) => {
+    onCategoryChange(key);
+    onClose();
+  };
+
   return (
     <Popover aria-labelledby="cat-title" className="w-72.5 gap-2.5 p-3.5">
       <h3
@@ -31,16 +38,16 @@ export function CategoryPopover({
       </h3>
 
       <div className="flex flex-col gap-1">
-        {OPTIONS.map((o) => {
-          const isSelected = o.key === selected;
+        {options.map((o) => {
+          const categoryColor = o.key === "all" ? "" : getCategoryColor(o.key);
           return (
             <button
               key={o.key}
               type="button"
-              aria-pressed={isSelected}
+              onClick={() => handleApply(o.key)}
               className={cn(
                 "flex h-11 w-full items-center gap-3 rounded-xl border px-3 text-left text-sm font-medium text-fg",
-                isSelected
+                o.key === selected
                   ? "border-lilac/30 bg-accent/18"
                   : "border-transparent bg-transparent hover:bg-white/5",
               )}
@@ -51,16 +58,18 @@ export function CategoryPopover({
                   className="size-2.5 shrink-0 rounded-[3px] "
                 />
               ) : (
-                <CategoryDot color={color} />
+                <CategoryDot color={categoryColor} />
               )}
               <span className={cn("flex-1", o.key !== "all" && "font-mono")}>
                 {o.label}
               </span>
               <span className="font-mono text-xs text-muted">
-                {counts[o.key]}
+                {counts[o.key] || 0}
               </span>
               <span className="flex size-4 items-center justify-center">
-                {isSelected && <IconCheck className="size-4 text-lilac" />}
+                {o.key === selected && (
+                  <IconCheck className="size-4 text-lilac" />
+                )}
               </span>
             </button>
           );

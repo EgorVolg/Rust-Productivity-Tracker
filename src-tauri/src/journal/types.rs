@@ -29,6 +29,7 @@ pub struct ParseResult {
     pub errors: Vec<ParseError>,
     pub line_count: usize,
     pub streak_days: u16,
+    pub total_cycles: usize,
 }
 
 #[derive(Debug, Clone, Copy)]

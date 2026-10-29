@@ -1,9 +1,7 @@
 import {
   AddCycleDialog,
   Background,
-  CategoriesCard,
   EmptyState,
-  EnergyCard,
   FilterBar,
   Heatmap,
   MorningBlock,
@@ -14,26 +12,30 @@ import {
   TopWords,
 } from "./components";
 import { PreviewState } from "./lib/view";
-import * as demoData from "./data/demo";
 import { useState } from "react";
 import {
   useJournal,
   useToast,
   useCycleManager,
   calculateSummary,
-  calculateCategoryStats,
-  calculateLengthStats,
-  calculateEnergyStats,
+  calculateCategoryStats, 
   calculateHeatmapMatrix,
   calculateBestDayAndHour,
   calculateMorningBlock,
   calculateTopWords,
+  DEFAULT_FILTERS,
+  useCategoryCounts,
+  usePeriodPresets,
+  useFilterHandlers,
+  type Filters,
+  type PanelId,
 } from "./lib";
 
 const preview: PreviewState = { panel: null, empty: false, heatTooltip: null };
 
 export default function App() {
-  const { journal, loading, error, loadJournal } = useJournal();
+  const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
+  const { journal, loading, error, loadJournal } = useJournal(filters);
   const toast = useToast();
   const cycles = useCycleManager({
     journal,
@@ -44,31 +46,33 @@ export default function App() {
   const [showAllCycles, setShowAllCycles] = useState(false);
   const [showRowMenu, setRowMenu] = useState<string | null>(null);
 
-  // Вычисляем статистику из реальных данных
-  const summary = journal ? calculateSummary(journal.cycles) : null;
-  const categories = journal ? calculateCategoryStats(journal.cycles) : [];
-  const cycleLength = journal
-    ? calculateLengthStats(journal.cycles)
-    : { min: 0, max: 0, avg: 0 };
-  const energy = journal
-    ? calculateEnergyStats(journal.cycles)
-    : { avg: 0, median: 0, distribution: [0, 0, 0, 0, 0] };
-  const heatmapMatrix = journal
-    ? calculateHeatmapMatrix(journal.cycles)
-    : demoData.heatmap;
-  const { bestDay, bestHour } = journal
-    ? calculateBestDayAndHour(heatmapMatrix)
-    : { bestDay: demoData.bestDay, bestHour: demoData.bestHour };
-  const morning = journal
-    ? calculateMorningBlock(journal.cycles)
-    : demoData.morning;
-  const topWords = journal
-    ? calculateTopWords(journal.cycles, demoData.filters.top)
-    : demoData.topWords;
+  const [openPanel, setOpenPanel] = useState<PanelId>(null);
+
+  // Вычисляем количество циклов по категориям (для счётчиков в фильтре)
+  const categoryCounts = useCategoryCounts(journal?.cycles ?? null);
+
+  // Пресеты периода
+  const periodPresets = usePeriodPresets(journal?.cycles ?? null);
+
+  // Обработчики для фильтров
+  const filterHandlers = useFilterHandlers(setFilters, DEFAULT_FILTERS);
 
   if (loading && !journal) return <div>Загрузка...</div>;
   if (error && !journal) return <div>Ошибка: {error}</div>;
-  if (!journal) return <div>Нет данных</div>;
+  if (!journal || journal.totalCycles == 0) return <EmptyState />;
+
+  // Вычисляем статистику из данных (без фильтрации - фильтрация будет на Rust)
+  const summary = calculateSummary(journal.cycles);
+  const categories = calculateCategoryStats(journal.cycles);
+
+  const heatmapMatrix = calculateHeatmapMatrix(journal.cycles);
+  const { bestDay, bestHour } = calculateBestDayAndHour(heatmapMatrix);
+  const morning = calculateMorningBlock(journal.cycles);
+  const topWords = calculateTopWords(journal.cycles, filters.top);
+
+  const handlePanelToggle = (panel: PanelId) => {
+    setOpenPanel(openPanel === panel ? null : panel);
+  };
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -78,11 +82,17 @@ export default function App() {
         <TopBar setOpenAddCycle={cycles.openAdd} />
 
         <FilterBar
-          filters={demoData.filters}
-          counts={demoData.categoryCounts}
-          total={journal.lineCount}
-          presets={demoData.periodPresets}
-          openPanel={preview.panel}
+          filters={filters}
+          counts={categoryCounts}
+          total={journal.cycles.length}
+          totalCycles={journal.totalCycles}
+          presets={periodPresets}
+          openPanel={openPanel}
+          onCategoryChange={filterHandlers.handleCategoryChange}
+          onPeriodChange={filterHandlers.handlePeriodChange}
+          onTopChange={filterHandlers.handleTopChange}
+          onReset={filterHandlers.handleResetFilters}
+          onPanelToggle={handlePanelToggle}
         />
 
         <main className="flex flex-col gap-6">
@@ -92,42 +102,36 @@ export default function App() {
             categories={categories}
           />
 
-          {preview.empty ? (
-            <EmptyState />
-          ) : (
-            <>
-              {/* <div className="grid grid-cols-3 gap-5">
+          {/* <div className="grid grid-cols-3 gap-5">
                 <CategoriesCard stats={categories} />
                 <CycleLengthCard stat={cycleLength} />
                 <EnergyCard stat={energy} />
               </div> */}
 
-              <Heatmap
-                matrix={heatmapMatrix}
-                bestDay={bestDay}
-                bestHour={bestHour}
-                tooltip={preview.heatTooltip}
-              />
+          <Heatmap
+            matrix={heatmapMatrix}
+            bestDay={bestDay}
+            bestHour={bestHour}
+            tooltip={preview.heatTooltip}
+          />
 
-              <div className="grid grid-cols-2 gap-5">
-                <MorningBlock minutesByDay={morning} />
-                <TopWords words={topWords} top={demoData.filters.top} />
-              </div>
+          <div className="grid grid-cols-2 gap-5">
+            <MorningBlock minutesByDay={morning} />
+            <TopWords words={topWords} top={filters.top} />
+          </div>
 
-              <RecentCycles
-                cycles={journal.cycles}
-                total={journal.lineCount}
-                setShowAll={setShowAllCycles}
-                showAll={showAllCycles}
-                setOpenAddCycle={cycles.openAdd}
-                showRowMenu={showRowMenu}
-                setRowMenu={setRowMenu}
-                handleCopyCycle={cycles.copy}
-                handleDeleteCycle={cycles.remove}
-                handleEditCycle={cycles.openEdit}
-              />
-            </>
-          )}
+          <RecentCycles
+            cycles={journal.cycles}
+            total={journal.cycles.length}
+            setShowAll={setShowAllCycles}
+            showAll={showAllCycles}
+            setOpenAddCycle={cycles.openAdd}
+            showRowMenu={showRowMenu}
+            setRowMenu={setRowMenu}
+            handleCopyCycle={cycles.copy}
+            handleDeleteCycle={cycles.remove}
+            handleEditCycle={cycles.openEdit}
+          />
         </main>
       </div>
 
@@ -135,7 +139,7 @@ export default function App() {
         key={cycles.version}
         addOrEdit={cycles.mode}
         editingCycleId={cycles.editingId}
-        suggestions={demoData.topicSuggestions}
+        suggestions={journal.cycles.map(c => c.topic)}
         formData={cycles.formData}
         open={cycles.open}
         onOpenChange={(v) => {
