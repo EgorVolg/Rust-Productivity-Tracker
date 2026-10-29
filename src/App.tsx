@@ -79,7 +79,7 @@ export default function App() {
       <Background />
 
       <div className="relative z-1 mx-auto flex max-w-340 flex-col gap-6 px-10 pt-8 pb-14">
-        <TopBar setOpenAddCycle={cycles.openAdd} />
+        <TopBar setOpenAddCycle={cycles.openAdd} errors={journal.errors} />
 
         <FilterBar
           filters={filters}

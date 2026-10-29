@@ -4,7 +4,7 @@ import { Button, IconInfo, Popover, SectionTag } from '../ui';
 const MAX_SHOWN = 10;
 
 /** §5.10: количество ошибок и список, не больше 10 строк, дальше — «и ещё N» */
-export function ErrorsPopover({ errors }: { errors: ParseError[] }) {
+export function ErrorsPopover({ errors, onClose }: { errors: ParseError[]; onClose: () => void }) {
   const shown = errors.slice(0, MAX_SHOWN);
   const rest = errors.length - shown.length;
 
@@ -41,7 +41,7 @@ export function ErrorsPopover({ errors }: { errors: ParseError[] }) {
       {rest > 0 && <p className="m-0 font-mono text-[13px] text-muted">и ещё {rest}</p>}
 
       <div className="flex justify-end">
-        <Button size="sm">Понятно</Button>
+        <Button size="sm" onClick={onClose}>Понятно</Button>
       </div>
     </Popover>
   );
