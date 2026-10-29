@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button, IconButton, IconMinus, IconPlus, Popover, ToggleChip } from '../ui';
 
 const PRESETS = [5, 10, 20];
@@ -6,20 +6,12 @@ const PRESETS = [5, 10, 20];
 interface TopWordsPopoverProps {
   value: number;
   onTopChange: (top: number) => void;
-  isOpen: boolean;
   onClose: () => void;
 }
 
 /** §4.4: сколько слов показать в частотном словаре */
-export function TopWordsPopover({ value, onTopChange, isOpen, onClose }: TopWordsPopoverProps) {
+export function TopWordsPopover({ value, onTopChange, onClose }: TopWordsPopoverProps) {
   const [localValue, setLocalValue] = useState(value);
-
-  // Сбрасываем локальное состояние при закрытии popover
-  useEffect(() => {
-    if (!isOpen) {
-      setLocalValue(value);
-    }
-  }, [isOpen, value]);
 
   const handleDecrement = () => {
     if (localValue > 1) {

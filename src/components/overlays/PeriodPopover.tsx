@@ -10,7 +10,6 @@ interface PeriodPopoverProps {
   /** текст ошибки, например «Дата должна быть в формате ГГГГ-ММ-ДД» */
   error?: string;
   onPeriodChange: (from: string, to: string) => void;
-  isOpen: boolean;
   onClose: () => void;
 }
 

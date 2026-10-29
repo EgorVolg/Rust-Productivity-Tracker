@@ -93,10 +93,14 @@ pub fn parse_journal(content: &str) -> ParseResult {
 
         match parse_line(line, logical_line_no) {
             Ok(cycle) => cycles.push(cycle),
-            Err(message) => errors.push(ParseError {
-                line: logical_line_no,
-                message,
-            }),
+            Err(message) => {
+                eprintln!("Parse error at line {}: {}", logical_line_no, message);
+                eprintln!("Line content: {}", line);
+                errors.push(ParseError {
+                    line: logical_line_no,
+                    message,
+                });
+            }
         }
     }
 

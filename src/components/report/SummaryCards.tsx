@@ -37,7 +37,7 @@ export function SummaryCards({
     <section aria-label="Сводка" className="grid grid-cols-4 gap-5">
       <Stat
         label="Всего циклов"
-        value={journal.lineCount}
+        value={journal.totalCycles}
         caption={topCategories || "нет циклов"}
         empty={empty}
       />

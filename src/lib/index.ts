@@ -5,3 +5,4 @@ export * from './cn';
 export * from './stats';
 export * from "./api"
 export * from "./hooks"
+export * from "./filters"

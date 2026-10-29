@@ -1,9 +1,7 @@
 import {
   AddCycleDialog,
   Background,
-  CategoriesCard,
   EmptyState,
-  EnergyCard,
   FilterBar,
   Heatmap,
   MorningBlock,
@@ -14,22 +12,21 @@ import {
   TopWords,
 } from "./components";
 import { PreviewState } from "./lib/view";
-import * as demoData from "./data/demo";
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import {
   useJournal,
   useToast,
   useCycleManager,
   calculateSummary,
-  calculateCategoryStats,
-  calculateLengthStats,
-  calculateEnergyStats,
+  calculateCategoryStats, 
   calculateHeatmapMatrix,
   calculateBestDayAndHour,
   calculateMorningBlock,
   calculateTopWords,
   DEFAULT_FILTERS,
-  CATEGORIES,
+  useCategoryCounts,
+  usePeriodPresets,
+  useFilterHandlers,
   type Filters,
   type PanelId,
 } from "./lib";
@@ -52,83 +49,30 @@ export default function App() {
   const [openPanel, setOpenPanel] = useState<PanelId>(null);
 
   // Вычисляем количество циклов по категориям (для счётчиков в фильтре)
-  const categoryCounts = useMemo(() => {
-    if (!journal) return { all: 0 };
-    const counts: Record<string, number> = { all: journal.cycles.length };
-    // Инициализируем все категории с 0
-    CATEGORIES.forEach((cat) => {
-      counts[cat] = 0;
-    });
-    // Считаем реальные циклы
-    journal.cycles.forEach((cycle) => {
-      counts[cycle.category] = (counts[cycle.category] || 0) + 1;
-    });
-    return counts;
-  }, [journal]);
+  const categoryCounts = useCategoryCounts(journal?.cycles ?? null);
 
   // Пресеты периода
-  const periodPresets = useMemo(() => {
-    if (!journal) return demoData.periodPresets;
-    const dates = journal.cycles.map((c) => c.date).sort();
-    if (dates.length === 0) return demoData.periodPresets;
-
-    const latest = dates[dates.length - 1];
-    const earliest = dates[0];
-
-    return [
-      { label: "7 дней", active: false },
-      { label: "14 дней", active: false },
-      { label: "Октябрь", active: false },
-      { label: "Всё время", active: true },
-    ];
-  }, [journal]);
-
-  // Вычисляем статистику из данных (без фильтрации - фильтрация будет на Rust)
-  const summary = journal ? calculateSummary(journal.cycles) : null;
-  const categories = journal ? calculateCategoryStats(journal.cycles) : [];
-  const cycleLength = journal
-    ? calculateLengthStats(journal.cycles)
-    : { min: 0, max: 0, avg: 0 };
-  const energy = journal
-    ? calculateEnergyStats(journal.cycles)
-    : { avg: 0, median: 0, distribution: [0, 0, 0, 0, 0] };
-  const heatmapMatrix = journal
-    ? calculateHeatmapMatrix(journal.cycles)
-    : demoData.heatmap;
-  const { bestDay, bestHour } = journal
-    ? calculateBestDayAndHour(heatmapMatrix)
-    : { bestDay: demoData.bestDay, bestHour: demoData.bestHour };
-  const morning = journal
-    ? calculateMorningBlock(journal.cycles)
-    : demoData.morning;
-  const topWords = journal
-    ? calculateTopWords(journal.cycles, filters.top)
-    : demoData.topWords;
+  const periodPresets = usePeriodPresets(journal?.cycles ?? null);
 
   // Обработчики для фильтров
-  const handleCategoryChange = (category: string) => {
-    setFilters((prev) => ({ ...prev, category }));
-  };
+  const filterHandlers = useFilterHandlers(setFilters, DEFAULT_FILTERS);
 
-  const handlePeriodChange = (from: string, to: string) => {
-    setFilters((prev) => ({ ...prev, from, to }));
-  };
+  if (loading && !journal) return <div>Загрузка...</div>;
+  if (error && !journal) return <div>Ошибка: {error}</div>;
+  if (!journal || journal.totalCycles == 0) return <EmptyState />;
 
-  const handleTopChange = (top: number) => {
-    setFilters((prev) => ({ ...prev, top }));
-  };
+  // Вычисляем статистику из данных (без фильтрации - фильтрация будет на Rust)
+  const summary = calculateSummary(journal.cycles);
+  const categories = calculateCategoryStats(journal.cycles);
 
-  const handleResetFilters = () => {
-    setFilters(DEFAULT_FILTERS);
-  };
+  const heatmapMatrix = calculateHeatmapMatrix(journal.cycles);
+  const { bestDay, bestHour } = calculateBestDayAndHour(heatmapMatrix);
+  const morning = calculateMorningBlock(journal.cycles);
+  const topWords = calculateTopWords(journal.cycles, filters.top);
 
   const handlePanelToggle = (panel: PanelId) => {
     setOpenPanel(openPanel === panel ? null : panel);
   };
-
-  if (loading && !journal) return <div>Загрузка...</div>;
-  if (error && !journal) return <div>Ошибка: {error}</div>;
-  if (!journal) return <div>Нет данных</div>;
 
   return (
     <div className="relative min-h-screen overflow-hidden">
@@ -144,10 +88,10 @@ export default function App() {
           totalCycles={journal.totalCycles}
           presets={periodPresets}
           openPanel={openPanel}
-          onCategoryChange={handleCategoryChange}
-          onPeriodChange={handlePeriodChange}
-          onTopChange={handleTopChange}
-          onReset={handleResetFilters}
+          onCategoryChange={filterHandlers.handleCategoryChange}
+          onPeriodChange={filterHandlers.handlePeriodChange}
+          onTopChange={filterHandlers.handleTopChange}
+          onReset={filterHandlers.handleResetFilters}
           onPanelToggle={handlePanelToggle}
         />
 
@@ -158,42 +102,36 @@ export default function App() {
             categories={categories}
           />
 
-          {preview.empty ? (
-            <EmptyState />
-          ) : (
-            <>
-              {/* <div className="grid grid-cols-3 gap-5">
+          {/* <div className="grid grid-cols-3 gap-5">
                 <CategoriesCard stats={categories} />
                 <CycleLengthCard stat={cycleLength} />
                 <EnergyCard stat={energy} />
               </div> */}
 
-              <Heatmap
-                matrix={heatmapMatrix}
-                bestDay={bestDay}
-                bestHour={bestHour}
-                tooltip={preview.heatTooltip}
-              />
+          <Heatmap
+            matrix={heatmapMatrix}
+            bestDay={bestDay}
+            bestHour={bestHour}
+            tooltip={preview.heatTooltip}
+          />
 
-              <div className="grid grid-cols-2 gap-5">
-                <MorningBlock minutesByDay={morning} />
-                <TopWords words={topWords} top={demoData.filters.top} />
-              </div>
+          <div className="grid grid-cols-2 gap-5">
+            <MorningBlock minutesByDay={morning} />
+            <TopWords words={topWords} top={filters.top} />
+          </div>
 
-              <RecentCycles
-                cycles={journal.cycles}
-                total={journal.lineCount}
-                setShowAll={setShowAllCycles}
-                showAll={showAllCycles}
-                setOpenAddCycle={cycles.openAdd}
-                showRowMenu={showRowMenu}
-                setRowMenu={setRowMenu}
-                handleCopyCycle={cycles.copy}
-                handleDeleteCycle={cycles.remove}
-                handleEditCycle={cycles.openEdit}
-              />
-            </>
-          )}
+          <RecentCycles
+            cycles={journal.cycles}
+            total={journal.cycles.length}
+            setShowAll={setShowAllCycles}
+            showAll={showAllCycles}
+            setOpenAddCycle={cycles.openAdd}
+            showRowMenu={showRowMenu}
+            setRowMenu={setRowMenu}
+            handleCopyCycle={cycles.copy}
+            handleDeleteCycle={cycles.remove}
+            handleEditCycle={cycles.openEdit}
+          />
         </main>
       </div>
 
@@ -201,7 +139,7 @@ export default function App() {
         key={cycles.version}
         addOrEdit={cycles.mode}
         editingCycleId={cycles.editingId}
-        suggestions={demoData.topicSuggestions}
+        suggestions={journal.cycles.map(c => c.topic)}
         formData={cycles.formData}
         open={cycles.open}
         onOpenChange={(v) => {

@@ -1,7 +1,6 @@
-import { useState, useEffect } from "react";
 import { cn } from "../../lib/cn";
 import { CATEGORIES, getCategoryColor, type Filters } from "../../lib/types";
-import { Button, CategoryDot, IconCheck, Popover } from "../ui";
+import { CategoryDot, IconCheck, Popover } from "../ui";
 
 type CategoryFilter = Filters["category"];
 
@@ -9,7 +8,6 @@ interface CategoryPopoverProps {
   selected: CategoryFilter;
   counts: Record<CategoryFilter, number>;
   onCategoryChange: (category: CategoryFilter) => void;
-  isOpen: boolean;
   onClose: () => void;
 }
 
@@ -17,7 +15,6 @@ export function CategoryPopover({
   selected,
   counts,
   onCategoryChange,
-  isOpen,
   onClose,
 }: CategoryPopoverProps) {
   // Формируем опции: "all" + все категории из CATEGORIES

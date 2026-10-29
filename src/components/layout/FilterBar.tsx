@@ -104,7 +104,6 @@ export function FilterBar({
               selected={filters.category}
               counts={counts}
               onCategoryChange={onCategoryChange}
-              isOpen={openPanel === "category"}
               onClose={() => onPanelToggle(null)}
             />
           }
@@ -125,7 +124,6 @@ export function FilterBar({
               presets={presets}
               hint={`Формат ГГГГ-ММ-ДД · в периоде ${total} ${plural(total, "цикл", "цикла", "циклов")}`}
               onPeriodChange={onPeriodChange}
-              isOpen={openPanel === "period"}
               onClose={() => onPanelToggle(null)}
             />
           }
@@ -140,7 +138,6 @@ export function FilterBar({
             <TopWordsPopover
               value={filters.top}
               onTopChange={onTopChange}
-              isOpen={openPanel === "top"}
               onClose={() => onPanelToggle(null)}
             />
           }
@@ -149,7 +146,7 @@ export function FilterBar({
 
       <div className="flex items-center gap-3.5">
         <span className="text-[13px] font-medium text-muted">
-          {`Показано ${total} из ${totalCycles} ${plural(totalCycles, "цикла", "циклов", "циклов")}`}
+          {`Показано ${total} из ${totalCycles} ${plural(total, "цикл", "цикла", "циклов")}`}
         </span>
         {anyFilter && (
           <Button variant="ghost" className="px-3.5" onClick={onReset}>

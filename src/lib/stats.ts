@@ -3,12 +3,6 @@ import type { CategoryStat, EnergyStat, LengthStat, Summary, WordStat } from './
 
 /** Вычислить сводную статистику из циклов */
 export function calculateSummary(cycles: Cycle[]): Summary {
-  if (cycles.length === 0) {
-    return { cycles: 0, rust: 0, english: 0, totalMinutes: 0, days: 0, avgPerDay: 0 };
-  }
-
-  const rustCount = cycles.filter(c => c.category === 'rust').length;
-  const englishCount = cycles.filter(c => c.category === 'english').length;
   const totalMinutes = cycles.reduce((sum, c) => sum + c.minutes, 0);
 
   // Вычисляем уникальные дни
@@ -16,8 +10,7 @@ export function calculateSummary(cycles: Cycle[]): Summary {
 
   return {
     cycles: cycles.length,
-    rust: rustCount,
-    english: englishCount,
+
     totalMinutes,
     days: uniqueDays,
     avgPerDay: uniqueDays > 0 ? totalMinutes / uniqueDays : 0,
